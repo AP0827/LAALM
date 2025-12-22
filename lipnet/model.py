@@ -1,9 +1,4 @@
-from keras.layers.convolutional import Conv3D, ZeroPadding3D
-from keras.layers.pooling import MaxPooling3D
-from keras.layers.core import Dense, Activation, Dropout, Flatten
-from keras.layers.wrappers import Bidirectional, TimeDistributed
-from keras.layers.recurrent import GRU
-from keras.layers import Input
+from keras.layers import Conv3D, ZeroPadding3D, MaxPooling3D, Dense, Activation, Dropout, Flatten, Bidirectional, TimeDistributed, GRU, Input
 from keras.models import Model
 from lipnet.core.layers import CTC
 from keras import backend as K
@@ -44,8 +39,8 @@ class LipNet(object):
 
         self.resh1 = TimeDistributed(Flatten())(self.drop3)
 
-        self.gru_1 = Bidirectional(GRU(256, return_sequences=True, kernel_initializer='Orthogonal', name='gru1'), merge_mode='concat')(self.resh1)
-        self.gru_2 = Bidirectional(GRU(256, return_sequences=True, kernel_initializer='Orthogonal', name='gru2'), merge_mode='concat')(self.gru_1)
+        self.gru_1 = Bidirectional(GRU(256, return_sequences=True, kernel_initializer='Orthogonal', name='gru1', reset_after=False), merge_mode='concat')(self.resh1)
+        self.gru_2 = Bidirectional(GRU(256, return_sequences=True, kernel_initializer='Orthogonal', name='gru2', reset_after=False), merge_mode='concat')(self.gru_1)
 
         # transforms RNN output to character activations:
         self.dense1 = Dense(self.output_size, kernel_initializer='he_normal', name='dense1')(self.gru_2)

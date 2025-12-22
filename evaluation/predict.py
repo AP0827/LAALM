@@ -21,13 +21,13 @@ PREDICT_BEAM_WIDTH  = 200
 PREDICT_DICTIONARY  = os.path.join(CURRENT_PATH,'..','common','dictionaries','grid.txt')
 
 def predict(weight_path, video_path, absolute_max_string_len=32, output_size=28):
-    print "\nLoading data from disk..."
-    video = Video(vtype='face', face_predictor_path=FACE_PREDICTOR_PATH)
+    print("\nLoading data from disk...")
+    video = Video(vtype='mouth')  # Use mouth-crop videos (no face detection needed)
     if os.path.isfile(video_path):
         video.from_video(video_path)
     else:
         video.from_frames(video_path)
-    print "Data loaded.\n"
+    print("Data loaded.\n")
 
     if K.image_data_format() == 'channels_first':
         img_c, frames_n, img_w, img_h = video.data.shape
@@ -38,7 +38,7 @@ def predict(weight_path, video_path, absolute_max_string_len=32, output_size=28)
     lipnet = LipNet(img_c=img_c, img_w=img_w, img_h=img_h, frames_n=frames_n,
                     absolute_max_string_len=absolute_max_string_len, output_size=output_size)
 
-    adam = Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+    adam = Adam(learning_rate=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
 
     lipnet.model.compile(loss={'ctc': lambda y_true, y_pred: y_pred}, optimizer=adam)
     lipnet.model.load_weights(weight_path)
@@ -69,17 +69,17 @@ if __name__ == '__main__':
         show_video_subtitle(video.face, result)
 
     stripe = "-" * len(result)
-    print ""
-    print " __                   __  __          __      "
-    print "/\\ \\       __        /\\ \\/\\ \\        /\\ \\__   "
-    print "\\ \\ \\     /\\_\\  _____\\ \\ `\\\\ \\     __\\ \\ ,_\\  "
-    print " \\ \\ \\  __\\/\\ \\/\\ '__`\\ \\ , ` \\  /'__`\\ \\ \\/  "
-    print "  \\ \\ \\L\\ \\\\ \\ \\ \\ \\L\\ \\ \\ \\`\\ \\/\\  __/\\ \\ \\_ "
-    print "   \\ \\____/ \\ \\_\\ \\ ,__/\\ \\_\\ \\_\\ \\____\\\\ \\__\\"
-    print "    \\/___/   \\/_/\\ \\ \\/  \\/_/\\/_/\\/____/ \\/__/"
-    print "                  \\ \\_\\                       "
-    print "                   \\/_/                       "
-    print ""
-    print "             --{}- ".format(stripe)
-    print "[ DECODED ] |> {} |".format(result)
-    print "             --{}- ".format(stripe)
+    print("")
+    print(" __                   __  __          __      ")
+    print("/\\ \\       __        /\\ \\/\\ \\        /\\ \\__   ")
+    print("\\ \\ \\     /\\_\\  _____\\ \\ `\\\\ \\     __\\ \\ ,_\\  ")
+    print(" \\ \\ \\  __\\/\\ \\/\\ '__`\\ \\ , ` \\  /'__`\\ \\ \\/  ")
+    print("  \\ \\ \\L\\ \\\\ \\ \\ \\ \\L\\ \\ \\ \\`\\ \\/\\  __/\\ \\ \\_ ")
+    print("   \\ \\____/ \\ \\_\\ \\ ,__/\\ \\_\\ \\_\\ \\____\\\\ \\__\\")
+    print("    \\/___/   \\/_/\\ \\ \\/  \\/_/\\/_/\\/____/ \\/__/")
+    print("                  \\ \\_\\                       ")
+    print("                   \\/_/                       ")
+    print("")
+    print("             --{}- ".format(stripe))
+    print("[ DECODED ] |> {} |".format(result))
+    print("             --{}- ".format(stripe))

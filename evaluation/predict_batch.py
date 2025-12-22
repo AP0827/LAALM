@@ -36,7 +36,7 @@ def predict(weight_path, video):
         lipnet = LipNet(img_c=3, img_w=100, img_h=50, frames_n=75,
                         absolute_max_string_len=32, output_size=28)
 
-        adam = Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+        adam = Adam(learning_rate=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
 
         lipnet.model.compile(loss={'ctc': lambda y_true, y_pred: y_pred}, optimizer=adam)
         lipnet.model.load_weights(weight_path)

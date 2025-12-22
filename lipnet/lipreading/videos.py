@@ -2,9 +2,14 @@ import os
 import numpy as np
 from keras import backend as K
 from scipy import ndimage
-from scipy.misc import imresize
+from PIL import Image
 import skvideo.io
-import dlib
+try:
+    import dlib
+    DLIB_AVAILABLE = True
+except ImportError:
+    DLIB_AVAILABLE = False
+    print("Warning: dlib not available. Face detection will not work. Use mouth-crop videos only.")
 from lipnet.lipreading.aligns import Align
 
 class VideoAugmenter(object):
@@ -107,12 +112,14 @@ class Video(object):
     def __init__(self, vtype='mouth', face_predictor_path=None):
         if vtype == 'face' and face_predictor_path is None:
             raise AttributeError('Face video need to be accompanied with face predictor')
+        if vtype == 'face' and not DLIB_AVAILABLE:
+            raise ImportError('dlib is not installed. Cannot process face videos. Use vtype="mouth" for mouth-crop videos.')
         self.face_predictor_path = face_predictor_path
         self.vtype = vtype
 
     def from_frames(self, path):
         frames_path = sorted([os.path.join(path, x) for x in os.listdir(path)])
-        frames = [ndimage.imread(frame_path) for frame_path in frames_path]
+        frames = [np.array(Image.open(frame_path)) for frame_path in frames_path]
         self.handle_type(frames)
         return self
 
@@ -134,6 +141,8 @@ class Video(object):
             raise Exception('Video type not found')
 
     def process_frames_face(self, frames):
+        if not DLIB_AVAILABLE:
+            raise ImportError('dlib is required for face processing')
         detector = dlib.get_frontal_face_detector()
         predictor = dlib.shape_predictor(self.face_predictor_path)
         mouth_frames = self.get_frames_mouth(detector, predictor, frames)
@@ -142,9 +151,22 @@ class Video(object):
         self.set_data(mouth_frames)
 
     def process_frames_mouth(self, frames):
-        self.face = np.array(frames)
-        self.mouth = np.array(frames)
-        self.set_data(frames)
+        # Resize frames to expected 100x50 dimensions if needed
+        from PIL import Image
+        resized_frames = []
+        target_w, target_h = 100, 50
+        
+        for frame in frames:
+            if frame.shape[1] != target_w or frame.shape[0] != target_h:
+                img = Image.fromarray(frame)
+                img = img.resize((target_w, target_h), Image.BILINEAR)
+                resized_frames.append(np.array(img))
+            else:
+                resized_frames.append(frame)
+        
+        self.face = np.array(resized_frames)
+        self.mouth = np.array(resized_frames)
+        self.set_data(resized_frames)
 
     def get_frames_mouth(self, detector, predictor, frames):
         MOUTH_WIDTH = 100
@@ -177,7 +199,7 @@ class Video(object):
                 normalize_ratio = MOUTH_WIDTH / float(mouth_right - mouth_left)
 
             new_img_shape = (int(frame.shape[0] * normalize_ratio), int(frame.shape[1] * normalize_ratio))
-            resized_img = imresize(frame, new_img_shape)
+            resized_img = np.array(Image.fromarray(frame).resize((new_img_shape[1], new_img_shape[0]), Image.BILINEAR))
 
             mouth_centroid_norm = mouth_centroid * normalize_ratio
 
@@ -192,9 +214,16 @@ class Video(object):
         return mouth_frames
 
     def get_video_frames(self, path):
-        videogen = skvideo.io.vreader(path)
-        frames = np.array([frame for frame in videogen])
-        return frames
+        import cv2
+        cap = cv2.VideoCapture(path)
+        frames = []
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            frames.append(frame)
+        cap.release()
+        return np.array(frames)
 
     def set_data(self, frames):
         data_frames = []

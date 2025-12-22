@@ -26,7 +26,7 @@ def stats(weight_path, dataset_path, img_c, img_w, img_h, frames_n, absolute_max
 	lipnet = LipNet(img_c=img_c, img_w=img_w, img_h=img_h, frames_n=frames_n, 
                     absolute_max_string_len=absolute_max_string_len, output_size=lip_gen.get_output_size())
 
-	adam = Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+	adam = Adam(learning_rate=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
 
 	lipnet.model.compile(loss={'ctc': lambda y_true, y_pred: y_pred}, optimizer=adam)
 	lipnet.model.load_weights(weight_path)

@@ -14,3 +14,5 @@ Pillow>=9.0.0
 nltk>=3.7
 sk-video>=1.1.10
 opencv-python>=4.6.0
+deepgram-sdk
+deepgram-captions

@@ -12,13 +12,15 @@ A complete guide to set up and run LipNet for lip reading predictions.
 
 1. **Clone/Download the project**
    ```powershell
-   cd d:\LipNet
+   cd d:\LipNet\LipNet
    ```
 
-2. **Create and activate virtual environment**
+2. **Create and activate virtual environment** (in parent directory)
    ```powershell
+   cd ..
    python -m venv .venv
    .venv\Scripts\activate
+   cd LipNet
    ```
 
 3. **Install dependencies**
@@ -135,29 +137,34 @@ If you open a new terminal, always activate the environment first:
 ```powershell
 cd d:\LipNet
 .venv\Scripts\activate
-cd evaluation
+cd LipNet\evaluation
 ```
 
 ## Project Structure
 
 ```
-LipNet/
-├── evaluation/
-│   ├── models/
-│   │   ├── unseen-weights178.h5
-│   │   └── overlapped-weights368.h5
-│   ├── samples/
-│   │   └── GRID/
-│   │       ├── bbaf2n.mpg
-│   │       └── ... (10 sample videos)
-│   └── predict.py
-├── lipnet/
-│   ├── model.py
-│   ├── model2.py
-│   └── ... (core modules)
-└── training/
-    ├── unseen_speakers/
-    └── overlapped_speakers/
+d:\LipNet/
+├── .venv/                      # Virtual environment (parent directory)
+├── LipNet/                     # Main LipNet code
+│   ├── evaluation/
+│   │   ├── models/
+│   │   │   ├── unseen-weights178.h5
+│   │   │   └── overlapped-weights368.h5
+│   │   ├── samples/
+│   │   │   └── GRID/
+│   │   │       ├── bbaf2n.mpg
+│   │   │       └── ... (10 sample videos)
+│   │   └── predict.py
+│   ├── lipnet/
+│   │   ├── model.py
+│   │   ├── model2.py
+│   │   └── ... (core modules)
+│   └── training/
+│       ├── unseen_speakers/
+│       └── overlapped_speakers/
+├── Transformer/                # Transformer integration (new)
+├── DeepGram/                   # Audio transcription (new)
+└── ... (documentation files)
 ```
 
 ## Technical Details

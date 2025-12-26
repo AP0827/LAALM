@@ -11,6 +11,7 @@ class LLMProvider(Enum):
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
     GOOGLE = "google"
+    GROQ = "groq"
     OLLAMA = "ollama"
     LOCAL = "local"
 
@@ -98,6 +99,13 @@ class LLMSemanticCorrector:
                 raise ImportError(
                     "google-generativeai package required: pip install google-generativeai"
                 )
+        
+        elif self.provider == LLMProvider.GROQ:
+            try:
+                from groq import Groq
+                self.client = Groq(api_key=self.api_key)
+            except ImportError:
+                raise ImportError("groq package required: pip install groq")
         
         elif self.provider == LLMProvider.OLLAMA:
             # For local Ollama, we'll use requests
@@ -283,6 +291,40 @@ class LLMSemanticCorrector:
         except json.JSONDecodeError as e:
             raise ValueError(f"LLM response was not valid JSON: {e}")
     
+    def correct_with_groq(self, prompt: str) -> CorrectionResult:
+        """Use Groq API for fast LLM correction."""
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert transcription refinement system that outputs valid JSON.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=self.temperature,
+                max_tokens=self.max_tokens,
+            )
+            
+            result_text = response.choices[0].message.content
+            result_json = json.loads(result_text)
+            
+            return CorrectionResult(
+                corrected_transcript=result_json.get("corrected_transcript", ""),
+                original_fused_transcript="",
+                corrections_made=result_json.get("corrections", []),
+                confidence_in_corrections=float(result_json.get("confidence_in_corrections", 0.5)),
+                explanation=result_json.get("explanation", ""),
+                metadata={
+                    "provider": "groq",
+                    "model": self.model,
+                    "notes": result_json.get("notes", ""),
+                },
+            )
+        except json.JSONDecodeError as e:
+            raise ValueError(f"LLM response was not valid JSON: {e}")
+    
     def correct_with_ollama(self, prompt: str) -> CorrectionResult:
         """Use local Ollama instance for correction."""
         try:
@@ -335,6 +377,8 @@ class LLMSemanticCorrector:
                 result = self.correct_with_openai(prompt)
             elif self.provider == LLMProvider.ANTHROPIC:
                 result = self.correct_with_anthropic(prompt)
+            elif self.provider == LLMProvider.GROQ:
+                result = self.correct_with_groq(prompt)
             elif self.provider == LLMProvider.OLLAMA:
                 result = self.correct_with_ollama(prompt)
             else:

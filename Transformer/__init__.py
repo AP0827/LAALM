@@ -31,8 +31,8 @@ class TransformerPipeline:
     
     def __init__(
         self,
-        llm_provider: LLMProvider = LLMProvider.OPENAI,
-        llm_model: str = "gpt-4",
+        llm_provider: LLMProvider = LLMProvider.GROQ,
+        llm_model: str = "mixtral-8x7b-32768",
         llm_api_key: Optional[str] = None,
         use_confidence_weighting: bool = True,
         llm_enabled: bool = True,
@@ -41,9 +41,9 @@ class TransformerPipeline:
         Initialize the transformer pipeline.
         
         Args:
-            llm_provider: LLM provider to use for semantic correction.
-            llm_model: LLM model name.
-            llm_api_key: API key for LLM provider.
+            llm_provider: LLM provider to use for semantic correction (default: Groq).
+            llm_model: LLM model name (default: mixtral-8x7b-32768 for Groq).
+            llm_api_key: API key for LLM provider (uses GROQ_API_KEY env var if not provided).
             use_confidence_weighting: Whether to weight fusion by confidence.
             llm_enabled: Whether to apply LLM correction.
         """

@@ -1,96 +1,189 @@
-# LipNet: End-to-End Sentence-level Lipreading
+# LAALM - Lip-reading and Audio Analysis with LLM# LipNet: End-to-End Sentence-level Lipreading
 
-Keras implementation of the method described in the paper 'LipNet: End-to-End Sentence-level Lipreading' by Yannis M. Assael, Brendan Shillingford, Shimon Whiteson, and Nando de Freitas (https://arxiv.org/abs/1611.01599).
 
-![LipNet performing prediction (subtitle alignment only for visualization)](assets/lipreading.gif)
 
-## Results
+Multi-modal speech transcription system combining audio analysis, visual lip-reading, and LLM correction.Keras implementation of the method described in the paper 'LipNet: End-to-End Sentence-level Lipreading' by Yannis M. Assael, Brendan Shillingford, Shimon Whiteson, and Nando de Freitas (https://arxiv.org/abs/1611.01599).
 
-|        Scenario        | Epoch |  CER  |  WER  |  BLEU  |
-| :---------------------: | :---: | :---: | :----: | :----: |
-|   Unseen speakers [C]   |  N/A  |  N/A  |  N/A  |  N/A  |
+
+
+## Features![LipNet performing prediction (subtitle alignment only for visualization)](assets/lipreading.gif)
+
+
+
+- **Audio Transcription**: DeepGram API for high-accuracy speech-to-text## Results
+
+- **Visual Lip-reading**: LipNet neural network for video-based transcription
+
+- **LLM Fusion**: Groq/OpenAI for intelligent multi-modal transcript correction|        Scenario        | Epoch |  CER  |  WER  |  BLEU  |
+
+- **Confidence Scoring**: Word-level confidence for both audio and visual inputs| :---------------------: | :---: | :---: | :----: | :----: |
+
+- **Automatic Fallback**: Mock mode when APIs unavailable|   Unseen speakers [C]   |  N/A  |  N/A  |  N/A  |  N/A  |
+
 |     Unseen speakers     |  178  | 6.19% | 14.19% | 88.21% |
-| Overlapped speakers [C] |  N/A  |  N/A  |  N/A  |  N/A  |
+
+## Quick Start| Overlapped speakers [C] |  N/A  |  N/A  |  N/A  |  N/A  |
+
 |   Overlapped speakers   |  368  | 1.56% | 3.38% | 96.93% |
 
-**Notes**:
+```bash
 
-- [C] means using curriculum learning.
+# Setup (see SETUP.md for detailed instructions)**Notes**:
+
+source .venv/bin/activate
+
+pip install -r requirements.txt- [C] means using curriculum learning.
+
 - N/A means either the training is in progress or haven't been performed.
-- Your contribution in sharing the results of this model is highly appreciated :)
 
-## Dependencies
+# Configure API keys- Your contribution in sharing the results of this model is highly appreciated :)
 
-* Keras 2.0+
-* Tensorflow 1.0+
-* PIP (for package installation)
+cp .env.example .env
 
-Plus several other libraries listed on `setup.py`
+# Edit .env with your GROQ_API_KEY, DEEPGRAM_API_KEY, etc.## Dependencies
 
-## Usage
+
+
+# Run* Keras 2.0+
+
+python main.py* Tensorflow 1.0+
+
+```* PIP (for package installation)
+
+
+
+## Usage ExamplePlus several other libraries listed on `setup.py`
+
+
+
+```python## Usage
+
+from pipeline import run_mvp
 
 To use the model, first you need to clone the repository:
 
-```
-git clone https://github.com/rizkiarm/LipNet
-```
+result = run_mvp(
+
+    video_file="samples/video/bbaf2n.mpg",```
+
+    audio_file="samples/audio/swwp4p.wav",git clone https://github.com/rizkiarm/LipNet
+
+    lipnet_weights="LipNet/evaluation/models/unseen-weights178.h5"```
+
+)
 
 Then you can install the package:
 
+print(f"Final Transcript: {result['final_transcript']}")
+
+print(f"DeepGram: {result['deepgram']['transcript']}")```
+
+print(f"LipNet: {result['lipnet']['transcript']}")cd LipNet/
+
+```pip install -e .
+
 ```
-cd LipNet/
-pip install -e .
-```
+
+## Project Structure
 
 **Note:** if you don't want to use CUDA, you need to edit the ``setup.py`` and change ``tensorflow-gpu`` to ``tensorflow``
 
-You're done!
+```
 
-Here is some ideas on what you can do next:
+LAALM/You're done!
 
-* Modify the package and make some improvements to it.
-* Train the model using predefined training scenarios.
-* Make your own training scenarios.
-* Use [pre-trained weights](https://github.com/rizkiarm/LipNet/tree/master/evaluation/models) to do lipreading.
-* Go crazy and experiment on other dataset! by changing some hyperparameters or modify the model.
+├── main.py                 # Entry point
 
-## Dataset
+├── pipeline.py             # MVP orchestrationHere is some ideas on what you can do next:
 
-This model uses GRID corpus (http://spandh.dcs.shef.ac.uk/gridcorpus/)
+├── test.py                 # Testing script
 
-## Pre-trained weights
+├── load_env.py             # Environment configuration* Modify the package and make some improvements to it.
 
-For those of you who are having difficulties in training the model (or just want to see the end results), you can download and use the weights provided here: https://github.com/rizkiarm/LipNet/tree/master/evaluation/models.
+├── requirements.txt        # Python dependencies* Train the model using predefined training scenarios.
 
-More detail on saving and loading weights can be found in [Keras FAQ](https://keras.io/getting-started/faq/#how-can-i-save-a-keras-model).
+├── .env.example            # API key template* Make your own training scenarios.
 
-## Training
+├── DeepGram/               # Audio transcription module* Use [pre-trained weights](https://github.com/rizkiarm/LipNet/tree/master/evaluation/models) to do lipreading.
+
+│   ├── transcriber.py* Go crazy and experiment on other dataset! by changing some hyperparameters or modify the model.
+
+│   └── word_confidence.py
+
+├── LipNet/                 # Visual lip-reading module## Dataset
+
+│   ├── evaluation/
+
+│   │   ├── models/         # Pre-trained weightsThis model uses GRID corpus (http://spandh.dcs.shef.ac.uk/gridcorpus/)
+
+│   │   └── predict_with_confidence.py
+
+│   └── lipnet/## Pre-trained weights
+
+│       └── model.py
+
+├── Transformer/            # LLM correction moduleFor those of you who are having difficulties in training the model (or just want to see the end results), you can download and use the weights provided here: https://github.com/rizkiarm/LipNet/tree/master/evaluation/models.
+
+│   └── llm_corrector.py
+
+└── samples/                # Test dataMore detail on saving and loading weights can be found in [Keras FAQ](https://keras.io/getting-started/faq/#how-can-i-save-a-keras-model).
+
+    ├── audio/*.wav         # Audio samples
+
+    └── video/*.mpg         # Video samples## Training
+
+```
 
 There are five different training scenarios that are (going to be) available:
 
+## Models
+
 ### Prerequisites
 
-1. Download all video (normal) and align from the GRID Corpus website.
-2. Extracts all the videos and aligns.
+Pre-trained LipNet models (in `LipNet/evaluation/models/`):
+
+- **unseen-weights178.h5** - For unseen speakers (14.19% WER)1. Download all video (normal) and align from the GRID Corpus website.
+
+- **overlapped-weights368.h5** - For overlapped speakers (3.38% WER)2. Extracts all the videos and aligns.
+
 3. Create ``datasets`` folder on each training scenario folder.
-4. Create ``align`` folder inside the ``datasets`` folder.
+
+## Requirements4. Create ``align`` folder inside the ``datasets`` folder.
+
 5. All current ``train.py`` expect the videos to be in the form of 100x50px mouthcrop image frames.
-   You can change this by adding ``vtype = "face"`` and ``face_predictor_path`` (which can be found in ``evaluation/models``) in the instantiation of ``Generator`` inside the ``train.py``
-6. The other way would be to extract the mouthcrop image using ``scripts/extract_mouth_batch.py`` (usage can be found inside the script).
-7. Create symlink from each ``training/*/datasets/align`` to your align folder.
+
+- Python 3.11+ (required for TensorFlow 2.12/Keras 2.12 compatibility)   You can change this by adding ``vtype = "face"`` and ``face_predictor_path`` (which can be found in ``evaluation/models``) in the instantiation of ``Generator`` inside the ``train.py``
+
+- CUDA-compatible GPU (optional, for faster inference)6. The other way would be to extract the mouthcrop image using ``scripts/extract_mouth_batch.py`` (usage can be found inside the script).
+
+- API Keys: DeepGram, Groq (or OpenAI)7. Create symlink from each ``training/*/datasets/align`` to your align folder.
+
 8. You can change the training parameters by modifying ``train.py`` inside its respective scenarios.
+
+## API Keys
 
 ### Random split (Unmaintained)
 
-Create symlink from ``training/random_split/datasets/video`` to your video dataset folder (which contains ``s*`` directory).
+Set in `.env` file:
 
-Train the model using the following command:
+```Create symlink from ``training/random_split/datasets/video`` to your video dataset folder (which contains ``s*`` directory).
 
-```
+GROQ_API_KEY=your_groq_key
+
+DEEPGRAM_API_KEY=your_deepgram_keyTrain the model using the following command:
+
+OPENAI_API_KEY=your_openai_key  # Optional fallback
+
+``````
+
 ./train random_split [GPUs (optional)]
-```
 
-**Note:** You can change the validation split value by modifying the ``val_split`` argument inside the ``train.py``.
+## License```
+
+
+
+See individual module directories for specific licenses.**Note:** You can change the validation split value by modifying the ``val_split`` argument inside the ``train.py``.
+
 
 ### Unseen speakers
 

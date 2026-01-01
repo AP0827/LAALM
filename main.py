@@ -4,14 +4,17 @@ from pipeline import run_mvp
 if __name__ == "__main__":
     load_env_file()
     
-    # Using files from samples folder
+    # Using MATCHING audio/video pair from samples folder
+    # File naming: same base name means same content
+    # Ground truth: "set white with p four please"
     result = run_mvp(
-        video_file="samples/video/bbaf2n.mpg",
-        audio_file="samples/audio/bbaf2n.wav",
-        lipnet_weights="LipNet/evaluation/models/unseen-weights178.h5"
+        video_file="samples/video/lwwz9s.mpg",
+        audio_file="samples/audio/lwwz9s.wav",
+        avsr_model_path="auto_avsr/pretrained_models/vsr_trlrs2lrs3vox2avsp_base.pth"
     )
     
     print(f"\n📄 Final Transcript: {result['final_transcript']}")
-    print(f"\nDeepGram: {result['deepgram']['transcript']}")
-    print(f"LipNet: {result['lipnet']['transcript']}")
-    print(f"Sources: deepgram, lipnet, groq")
+    print(f"\nAudio: {result['deepgram']['transcript']}")
+    print(f"Video: {result['avsr']['transcript']}")
+    print(f"Sources: audio, video, groq")
+

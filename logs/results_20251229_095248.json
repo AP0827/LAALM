@@ -1,0 +1,176 @@
+[
+  {
+    "timestamp": "2025-12-29T09:52:48.507296",
+    "session_id": "20251229_095248",
+    "video_file": "samples/video/lwwz9s.mpg",
+    "results": {
+      "deepgram": {
+        "raw_response": "metadata=ListenV1ResponseMetadata(transaction_key='deprecated', request_id='35cf611c-ea6d-48de-a1d3-27a684db4067', sha256='ad734a3c7d7703edd366e7184c05dbbf00284c76c04570a26e5da1fa89e149cc', created=datetime.datetime(2025, 12, 29, 4, 25, 10, 475000, tzinfo=TzInfo(0)), duration=3.0, channels=1.0, models=['1abfe86b-e047-4eed-858a-35e5625b41ee'], model_info={'1abfe86b-e047-4eed-858a-35e5625b41ee': {'name': '2-general-nova', 'version': '2024-01-06.5664', 'arch': 'nova-2'}}, summary_info=None, sentiment_info=None, topics_info=None, intents_info=None, tags=None) results=ListenV1ResponseResults(channels=[ListenV1ResponseResultsChannelsItem(search=None, alternatives=[ListenV1ResponseResultsChannelsItemAlternativesItem(transcript='Lay white with zed nine soon.', confidence=0.9873047, words=[ListenV1ResponseResultsChannelsItemAlternativesItemWordsItem(word='lay', start=0.79999995, end=0.96, confidence=0.69384766, punctuated_word='Lay'), ListenV1ResponseResultsChannelsItemAlternativesItemWordsItem(word='white', start=0.96, end=1.28, confidence=0.9248047, punctuated_word='white'), ListenV1ResponseResultsChannelsItemAlternativesItemWordsItem(word='with', start=1.28, end=1.52, confidence=0.9873047, punctuated_word='with'), ListenV1ResponseResultsChannelsItemAlternativesItemWordsItem(word='zed', start=1.52, end=1.76, confidence=0.9716797, punctuated_word='zed'), ListenV1ResponseResultsChannelsItemAlternativesItemWordsItem(word='nine', start=1.76, end=2.0, confidence=1.0, punctuated_word='nine'), ListenV1ResponseResultsChannelsItemAlternativesItemWordsItem(word='soon', start=2.0, end=2.5, confidence=0.9995117, punctuated_word='soon.')], paragraphs=ListenV1ResponseResultsChannelsItemAlternativesItemParagraphs(transcript='\\nLay white with zed nine soon.', paragraphs=[ListenV1ResponseResultsChannelsItemAlternativesItemParagraphsParagraphsItem(sentences=[ListenV1ResponseResultsChannelsItemAlternativesItemParagraphsParagraphsItemSentencesItem(text='Lay white with zed nine soon.', start=0.79999995, end=2.5)], speaker=None, num_words=6.0, start=0.79999995, end=2.5)]), summaries=None, topics=None)], detected_language=None)], utterances=[ListenV1ResponseResultsUtterancesItem(start=0.79999995, end=2.5, confidence=0.9295247, channel=0.0, transcript='Lay white with zed nine soon.', words=[ListenV1ResponseResultsUtterancesItemWordsItem(word='lay', start=0.79999995, end=0.96, confidence=0.69384766, speaker=None, speaker_confidence=None, punctuated_word='Lay'), ListenV1ResponseResultsUtterancesItemWordsItem(word='white', start=0.96, end=1.28, confidence=0.9248047, speaker=None, speaker_confidence=None, punctuated_word='white'), ListenV1ResponseResultsUtterancesItemWordsItem(word='with', start=1.28, end=1.52, confidence=0.9873047, speaker=None, speaker_confidence=None, punctuated_word='with'), ListenV1ResponseResultsUtterancesItemWordsItem(word='zed', start=1.52, end=1.76, confidence=0.9716797, speaker=None, speaker_confidence=None, punctuated_word='zed'), ListenV1ResponseResultsUtterancesItemWordsItem(word='nine', start=1.76, end=2.0, confidence=1.0, speaker=None, speaker_confidence=None, punctuated_word='nine'), ListenV1ResponseResultsUtterancesItemWordsItem(word='soon', start=2.0, end=2.5, confidence=0.9995117, speaker=None, speaker_confidence=None, punctuated_word='soon.')], speaker=None, id='966d256d-a7d3-495e-bee6-d4e2fd1225b8')], summary=None, topics=None, intents=None, sentiments=None)",
+        "transcript": "Lay white with zed nine soon.",
+        "overall_confidence": 0.9873047,
+        "word_confidences": [
+          "('lay', 0.69384766)",
+          "('white', 0.9248047)",
+          "('with', 0.9873047)",
+          "('zed', 0.9716797)",
+          "('nine', 1.0)",
+          "('soon', 0.9995117)"
+        ],
+        "metrics": {
+          "mean_confidence": 0.9295247433333335,
+          "median_confidence": 0.9794922,
+          "std_confidence": 0.10843313307229202,
+          "min_confidence": 0.69384766,
+          "max_confidence": 1.0,
+          "low_confidence_ratio": 0.16666666666666666,
+          "low_confidence_threshold": 0.75,
+          "total_words": 6,
+          "transcript_duration": 1.7000000499999999,
+          "transcript_completeness": 0.5666666833333333
+        },
+        "low_confidence_words": [
+          "('lay', 0.69384766)"
+        ]
+      },
+      "avsr": {
+        "transcript": "LATE WHITE WE'VE SAID NIGHT SOON",
+        "overall_confidence": 0.5058333333333332,
+        "word_confidences": [
+          "('LATE', 0.525)",
+          "('WHITE', 0.5)",
+          "(\"WE'VE\", 0.5)",
+          "('SAID', 0.485)",
+          "('NIGHT', 0.5)",
+          "('SOON', 0.525)"
+        ]
+      },
+      "combined_words": [
+        {
+          "position": 0,
+          "word": "lay",
+          "deepgram": {
+            "word": "lay",
+            "confidence": 0.69384766
+          },
+          "avsr": {
+            "word": "LATE",
+            "confidence": 0.525
+          },
+          "average_confidence": 0.60942383,
+          "agreement": false,
+          "low_confidence": true
+        },
+        {
+          "position": 1,
+          "word": "white",
+          "deepgram": {
+            "word": "white",
+            "confidence": 0.9248047
+          },
+          "avsr": {
+            "word": "WHITE",
+            "confidence": 0.5
+          },
+          "average_confidence": 0.7124023500000001,
+          "agreement": true,
+          "low_confidence": true
+        },
+        {
+          "position": 2,
+          "word": "with",
+          "deepgram": {
+            "word": "with",
+            "confidence": 0.9873047
+          },
+          "avsr": {
+            "word": "WE'VE",
+            "confidence": 0.5
+          },
+          "average_confidence": 0.7436523500000001,
+          "agreement": false,
+          "low_confidence": true
+        },
+        {
+          "position": 3,
+          "word": "zed",
+          "deepgram": {
+            "word": "zed",
+            "confidence": 0.9716797
+          },
+          "avsr": {
+            "word": "SAID",
+            "confidence": 0.485
+          },
+          "average_confidence": 0.72833985,
+          "agreement": false,
+          "low_confidence": true
+        },
+        {
+          "position": 4,
+          "word": "nine",
+          "deepgram": {
+            "word": "nine",
+            "confidence": 1.0
+          },
+          "avsr": {
+            "word": "NIGHT",
+            "confidence": 0.5
+          },
+          "average_confidence": 0.75,
+          "agreement": false,
+          "low_confidence": true
+        },
+        {
+          "position": 5,
+          "word": "soon",
+          "deepgram": {
+            "word": "soon",
+            "confidence": 0.9995117
+          },
+          "avsr": {
+            "word": "SOON",
+            "confidence": 0.525
+          },
+          "average_confidence": 0.7622558500000001,
+          "agreement": true,
+          "low_confidence": true
+        }
+      ],
+      "combined_transcript": "lay white with zed nine soon",
+      "groq": {
+        "corrected_transcript": "lay white with zed nine soon",
+        "corrections": [
+          {
+            "original_phrase": "LATE WHITE WE'VE SAID NIGHT SOON",
+            "corrected_phrase": "lay white with zed nine soon",
+            "reason": "Audio transcript is more reliable for phonetically distinct words and has higher overall confidence"
+          },
+          {
+            "original_phrase": "LATE",
+            "corrected_phrase": "lay",
+            "reason": "Audio has higher confidence for 'lay' and it is a valid word in the context of LRS3 grid commands"
+          },
+          {
+            "original_phrase": "WE'VE",
+            "corrected_phrase": "with",
+            "reason": "Audio has higher confidence for 'with' and it is a valid word in the context of LRS3 grid commands"
+          },
+          {
+            "original_phrase": "SAID",
+            "corrected_phrase": "zed",
+            "reason": "Audio has higher confidence for 'zed' and it is a valid word in the context of LRS3 grid commands"
+          },
+          {
+            "original_phrase": "NIGHT",
+            "corrected_phrase": "nine",
+            "reason": "Audio has higher confidence for 'nine' and it is a valid word in the context of LRS3 grid commands"
+          }
+        ],
+        "confidence": 0.987,
+        "notes": "The audio transcript 'lay white with zed nine soon' is a valid English command used in the LRS3 dataset, and the audio modality is more reliable for phonetically distinct words. The visual transcript had several errors, including homophone confusion and low confidence words.",
+        "status": "success"
+      },
+      "final_transcript": "lay white with zed nine soon"
+    }
+  }
+]

@@ -347,53 +347,46 @@ VISUAL TRANSCRIPTION (auto_avsr - lip reading, prone to homophones):
 COMBINED ANALYSIS:
 - Total Words: {len(combined_words)}
 - Low Confidence Words (< 0.7): {len(low_conf_words)}
-  {[w['word'] for w in low_conf_words]}
+   {[w['word'] for w in low_conf_words]}
 - Word Disagreements: {len(disagreements)}
   {disagreements}
 
 CRITICAL INSTRUCTIONS:
-1. **SEMANTIC COHERENCE IS PARAMOUNT** - The final transcript MUST make grammatical and contextual sense
-2. **Audio is more reliable for phonetically distinct words** - Trust audio for unique sounds
-3. **Visual helps disambiguate similar-sounding words** - Use visual for homophones (their/there, two/to/too)
-4. **Common VSR errors to watch for:**
-   - Short words (at, a, in, is) often missed by lip-reading
-   - Homophones confused (bin/been/bim, two/to, for/four)
-   - Merged words (f two → F2, bin blue → binblue)
-5. **VALIDATE semantic plausibility** - Reject transcripts that are grammatically nonsensical
-6. **When both transcripts are implausible, prefer the one with:**
-   - Better grammar
-   - More common word usage
-   - Higher overall confidence
-   - Fewer unlikely word combinations
+1. **TRUST THE FUSION LAYER** - The combined transcript has already intelligently selected words based on:
+   - Confidence scores (calibrated across modalities)
+   - Phonetic analysis (viseme-aware disambiguation)
+   - Context consistency
+   - Alignment quality
+   
+2. **YOUR ROLE IS SEMANTIC REFINEMENT ONLY** - Focus on:
+   - Grammar and sentence structure
+   - Contextual plausibility
+   - Fixing obvious transcription artifacts (merged words, punctuation)
+   - Validating the combined transcript makes sense
+   
+3. **DO NOT second-guess modality selection** - The fusion already chose the best word for each position
+
+4. **Common transcription artifacts to fix:**
+   - Merged words (e.g., "binblue" → "bin blue", "f two" → "f two" is correct)
+   - Missing punctuation
+   - Capitalization inconsistencies
+   - Obvious grammar errors
+
+5. **LRS3 Grid Commands Context:**
+   These command patterns are VALID and common in the dataset:
+   - "[action] [color] [with/at] [letter] [number] [timing]"
+   - Examples: "lay white with zed nine soon", "bin blue at f two please"
+   - Colors: red, blue, white, green, etc.
+   - Letters: a-z (spelled out or single)
+   - Numbers: 1-10
+   - Actions: lay, bin, set, place, put
+   - Timing: now, soon, please, again
 
 DECISION PROCESS:
-Step 1: Check if EITHER transcript is semantically coherent as-is
-Step 2: If audio transcript makes sense, prefer it (audio is generally more accurate)
-Step 3: If visual transcript makes more sense, use it but validate each word
-Step 4: For disagreements, choose based on:
-   - Phonetic distinctiveness (audio wins for unique sounds)
-   - Visual similarity (visual wins for homophones)
-   - Word-level confidence
-   - Context and grammar
-
-EXAMPLES OF GOOD CORRECTIONS:
-
-Example 1:
-Audio: "bin blue at f two please"
-Visual: "BIMBO F2 NOW"
-Correct: "bin blue at f two please" (audio is coherent, visual has errors)
-
-Example 2:
-Audio: "set right with p four please"
-Visual: "SET WHITE WITH B4 PLEASE"
-Correct: "set right with p four please" (audio is coherent, visual confused homophones)
-
-Example 3 (LRS3 grid commands - these are VERY COMMON):
-- "lay white with zed nine soon"
-- "bin blue at f two please"
-- "place red at g five now"
-- "set white with p four soon"
-These are VALID English commands used in the LRS3 dataset. Colors, letters, and numbers are correct.
+Step 1: Check if the combined transcript is semantically coherent
+Step 2: If it makes sense (including LRS3 command patterns), accept it with minimal changes
+Step 3: Only make corrections for clear grammar/semantic issues, NOT modality preference
+Step 4: Preserve the word choices from the fusion layer unless they create nonsensical phrases
 
 Respond with ONLY a JSON object (no markdown, no code blocks):
 {{
@@ -498,8 +491,33 @@ def run_mvp(
         }
     
     # Get video transcription with confidence
+    processed_video_path = None
     if video_file and os.path.exists(video_file):
-        avsr_result = get_avsr_confidence(video_file, avsr_model_path)
+        try:
+            # Preprocess video (CLAHE & Sharpening for better VSR)
+            print("🎥 Preprocessing video (enhancing frames)...")
+            sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'auto_avsr'))
+            from preprocessor import VideoPreprocessor
+            
+            preprocessor = VideoPreprocessor(
+                apply_clahe=True,
+                apply_sharpen=True
+            )
+            processed_video_path = preprocessor.process(video_file)
+            
+            # Use processed file for transcription
+            avsr_result = get_avsr_confidence(processed_video_path, avsr_model_path)
+            
+        except Exception as e:
+            print(f"   ⚠ Video preprocessing failed, using original file: {e}")
+            avsr_result = get_avsr_confidence(video_file, avsr_model_path)
+        finally:
+            # Clean up temp file
+            if processed_video_path and processed_video_path != video_file and os.path.exists(processed_video_path):
+                try:
+                    os.remove(processed_video_path)
+                except:
+                    pass
     else:
         print("👁️👄 Using mock auto_avsr data (no video file provided)")
         avsr_result = {

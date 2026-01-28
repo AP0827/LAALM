@@ -11,6 +11,7 @@ Perfect for scenarios where you have both audio and video input.
 
 import os
 import sys
+import numpy as np
 from typing import Dict, Any, List, Tuple, Optional
 
 # Load environment variables from .env file
@@ -145,36 +146,133 @@ def combine_word_confidences(
     avsr_words: List[Tuple[str, float]],
 ) -> List[Dict[str, Any]]:
     """
-    Combine word-level confidence scores from both models.
+    Combine word-level confidence scores using ROBUST ALIGNMENT and Attention Fusion.
+    
+    IMPROVEMENT: Now uses Needleman-Wunsch alignment to align audio and visual
+    streams before fusion, preventing cascading errors from missed words.
     
     Args:
-        deepgram_words: [(word, confidence), ...] from DeepGram
-        avsr_words: [(word, confidence), ...] from auto_avsr
+        deepgram_words: List of tuples from DeepGram. Can be (word, conf) or (word, conf, start, end).
+        avsr_words: List of tuples from auto_avsr. (word, conf).
         
     Returns:
-        List of dicts with combined confidence information
+        List of dicts with combined confidence information + attention weights
     """
-    combined = []
-    max_words = max(len(deepgram_words), len(avsr_words))
+    # Import our modules
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'Transformer'))
+    from attention_fusion import AttentionFusion
+    from alignment import TranscriptAligner
     
-    for i in range(max_words):
-        deepgram_word, deepgram_conf = deepgram_words[i] if i < len(deepgram_words) else ("", 0.0)
-        avsr_word, avsr_conf = avsr_words[i] if i < len(avsr_words) else ("", 0.0)
+    # 1. Initialize Aligner
+    aligner = TranscriptAligner(
+        match_score=2.0,
+        mismatch_penalty=-1.0,
+        gap_penalty=-1.0
+    )
+    
+    # 2. Calibration (UNBIASING)
+    # The user requested a "more unbiased" fusion.
+    # Audio confidence is typically higher (0.8-0.9) than Visual (0.5-0.6).
+    # We calibrate Visual scores to match Audio distribution.
+    
+    audio_confs = [w[1] for w in deepgram_words]
+    video_confs = [w[1] for w in avsr_words]
+    
+    if audio_confs and video_confs:
+        a_mean, a_std = np.mean(audio_confs), np.std(audio_confs)
+        v_mean, v_std = np.mean(video_confs), np.std(video_confs)
         
-        # Compute average confidence
-        avg_confidence = (deepgram_conf + avsr_conf) / 2.0
+        # Avoid division by zero
+        v_std = v_std if v_std > 0.01 else 0.1
+        a_std = a_std if a_std > 0.01 else 0.1
         
-        # Mark as low confidence if either model is uncertain
-        is_low_confidence = deepgram_conf < 0.7 or avsr_conf < 0.7
+        print(f"⚖️  Calibration: Audio μ={a_mean:.2f} σ={a_std:.2f} | Visual μ={v_mean:.2f} σ={v_std:.2f}")
         
+        # Scale visual words
+        calibrated_avsr_words = []
+        for w, conf in avsr_words:
+            # Z-score normalization + re-scaling to Audio distribution
+            z_score = (conf - v_mean) / v_std
+            new_conf = (z_score * a_std) + a_mean
+            # Clip to [0, 1]
+            new_conf = max(0.01, min(0.99, new_conf))
+            calibrated_avsr_words.append((w, new_conf))
+        
+        # Use calibrated words for alignment and fusion
+        avsr_words_for_fusion = calibrated_avsr_words
+        print("   ✓ Visual confidence calibrated to match audio distribution")
+    else:
+        avsr_words_for_fusion = avsr_words
+
+    # 3. Perform Robust Alignment
+    # Align the sequences (returns lists of same length with None for gaps)
+    aligned_audio, aligned_visual = aligner.align(deepgram_words, avsr_words_for_fusion)
+    
+    # 4. Prepare for Fusion
+    # We need to convert the aligned lists (which may have None) back into 
+    # the format expected by AttentionFusion, but strictly paired.
+    
+    paired_audio = []
+    paired_visual = []
+    
+    for a, v in zip(aligned_audio, aligned_visual):
+        # Handle Audio Gap (Visual Only)
+        if a is None:
+            paired_audio.append(("", 0.0))
+        else:
+            # Handle both 2-tuple and 4-tuple formats
+            paired_audio.append((a[0], a[1]))
+            
+        # Handle Visual Gap (Audio Only)
+        if v is None:
+            paired_visual.append(("", 0.0))
+        else:
+            paired_visual.append((v[0], v[1]))
+            
+    # 3. Perform Attention-Based Fusion
+    fusion = AttentionFusion(
+        temperature=2.0,           
+        context_window=3,          
+        switching_penalty=0.15,    
+        min_confidence_threshold=0.6
+    )
+    
+    fusion_result = fusion.fuse_transcripts(
+        audio_words=paired_audio,
+        visual_words=paired_visual
+    )
+    
+    # 4. Format Output
+    combined = []
+    for i, detail in enumerate(fusion_result.word_details):
+        # Recover original metadata if available (timestamps from audio)
+        audio_source = aligned_audio[i]
+        start_time = 0.0
+        end_time = 0.0
+        
+        if audio_source and len(audio_source) >= 4:
+            start_time = audio_source[2]
+            end_time = audio_source[3]
+            
         combined.append({
-            "position": i,
-            "word": deepgram_word or avsr_word,  # Prefer DeepGram if both available
-            "deepgram": {"word": deepgram_word, "confidence": deepgram_conf},
-            "avsr": {"word": avsr_word, "confidence": avsr_conf},
-            "average_confidence": avg_confidence,
-            "agreement": deepgram_word.lower() == avsr_word.lower(),
-            "low_confidence": is_low_confidence,
+            "position": detail['position'],
+            "word": detail['word'],
+            "deepgram": {
+                "word": detail['audio_word'], 
+                "confidence": detail['audio_conf']
+            },
+            "avsr": {
+                "word": detail['visual_word'], 
+                "confidence": detail['visual_conf']
+            },
+            "average_confidence": detail['confidence'],
+            "agreement": detail['audio_word'].lower() == detail['visual_word'].lower(),
+            "low_confidence": detail['confidence'] < 0.6,
+            "selected_modality": detail['selected_modality'],
+            "audio_weight": detail['audio_weight'],
+            "visual_weight": detail['visual_weight'],
+            "start": start_time,
+            "end": end_time
         })
     
     return combined
@@ -380,7 +478,12 @@ def run_mvp(
     print("=" * 80)
     
     # Get audio transcription with confidence
+    processed_audio_path = None
     if audio_file and os.path.exists(audio_file):
+        # We process sending the ORIGINAL audio file to DeepGram.
+        # Previous experimentation with 'scipy' re-encoding caused quality degradation.
+        # DeepGram handles raw audio formats better than our simple preprocessor.
+        print("📊 Transcribing audio with DeepGram (Direct)...")
         deepgram_result = get_deepgram_confidence(audio_file, deepgram_api_key)
     else:
         print("📊 Using mock DeepGram data (no audio file provided)")

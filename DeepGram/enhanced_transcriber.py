@@ -44,7 +44,8 @@ class DeepGramWithConfidence:
         metrics = self.confidence_extractor.compute_metrics(response)
         
         # Extract words as list of tuples for downstream processing
-        word_confidences = [(w.word, w.confidence) for w in metrics.words]
+        # Updated to include timing for alignment: (word, confidence, start, end)
+        word_confidences = [(w.word, w.confidence, w.start, w.end) for w in metrics.words]
         
         return {
             "raw_response": response,
@@ -92,7 +93,8 @@ class DeepGramWithConfidence:
         metrics = self.confidence_extractor.compute_metrics(response)
         
         # Extract words as list of tuples
-        word_confidences = [(w.word, w.confidence) for w in metrics.words]
+        # Updated to include timing for alignment: (word, confidence, start, end)
+        word_confidences = [(w.word, w.confidence, w.start, w.end) for w in metrics.words]
         
         return {
             "raw_response": response,

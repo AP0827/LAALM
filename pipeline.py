@@ -13,6 +13,7 @@ import os
 import sys
 import numpy as np
 from typing import Dict, Any, List, Tuple, Optional
+from pathlib import Path
 
 # Load environment variables from .env file
 from load_env import load_env_file
@@ -358,24 +359,27 @@ CRITICAL INSTRUCTIONS:
    - Context consistency
    - Alignment quality
    
-2. **YOUR ROLE IS SEMANTIC REFINEMENT ONLY** - Focus on:
-   - Grammar and sentence structure
-   - Contextual plausibility
-   - Fixing obvious transcription artifacts (merged words, punctuation)
-   - Validating the combined transcript makes sense
+2. **YOUR ROLE IS SEMANTIC REFINEMENT + CAPTION FORMATTING** - Focus on:
+   - **Punctuation**: Add periods, commas, question marks, exclamation marks
+   - **Capitalization**: Proper sentence starts, proper nouns
+   - **Grammar**: Fix obvious errors
+   - **Sentence structure**: Make it readable as captions
+   - **Contextual plausibility**: Ensure the transcript makes sense
    
 3. **DO NOT second-guess modality selection** - The fusion already chose the best word for each position
 
-4. **Common transcription artifacts to fix:**
-   - Merged words (e.g., "binblue" → "bin blue", "f two" → "f two" is correct)
-   - Missing punctuation
-   - Capitalization inconsistencies
-   - Obvious grammar errors
+4. **Caption Formatting Guidelines**:
+   - Add periods at end of complete thoughts
+   - Add commas for natural pauses
+   - Capitalize first word of each sentence
+   - Capitalize proper nouns (names, places)
+   - Use question marks for questions
+   - Keep numbers and letters as-is (zed, nine, etc.)
 
 5. **LRS3 Grid Commands Context:**
    These command patterns are VALID and common in the dataset:
    - "[action] [color] [with/at] [letter] [number] [timing]"
-   - Examples: "lay white with zed nine soon", "bin blue at f two please"
+   - Examples: "Lay white with zed nine soon.", "Bin blue at f two please."
    - Colors: red, blue, white, green, etc.
    - Letters: a-z (spelled out or single)
    - Numbers: 1-10
@@ -383,10 +387,11 @@ CRITICAL INSTRUCTIONS:
    - Timing: now, soon, please, again
 
 DECISION PROCESS:
-Step 1: Check if the combined transcript is semantically coherent
-Step 2: If it makes sense (including LRS3 command patterns), accept it with minimal changes
-Step 3: Only make corrections for clear grammar/semantic issues, NOT modality preference
-Step 4: Preserve the word choices from the fusion layer unless they create nonsensical phrases
+Step 1: Add proper punctuation and capitalization to the combined transcript
+Step 2: Check if the result is semantically coherent
+Step 3: If it makes sense (including LRS3 command patterns), accept it
+Step 4: Only make word-level corrections for clear semantic issues, NOT modality preference
+Step 5: Preserve the word choices from the fusion layer unless they create nonsensical phrases
 
 Respond with ONLY a JSON object (no markdown, no code blocks):
 {{
@@ -494,14 +499,19 @@ def run_mvp(
     processed_video_path = None
     if video_file and os.path.exists(video_file):
         try:
-            # Preprocess video (CLAHE & Sharpening for better VSR)
-            print("🎥 Preprocessing video (enhancing frames)...")
+            # Preprocess video (Advanced: Denoising, Temporal Smoothing, Mouth-Focus, SR)
+            print("🎥 Preprocessing video (advanced enhancements)...")
             sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'auto_avsr'))
-            from preprocessor import VideoPreprocessor
+            from advanced_preprocessor import AdvancedVideoPreprocessor
             
-            preprocessor = VideoPreprocessor(
-                apply_clahe=True,
-                apply_sharpen=True
+            preprocessor = AdvancedVideoPreprocessor(
+                apply_denoising=True,
+                apply_temporal_smoothing=False,  # Disabled (can blur lip movements)
+                apply_super_resolution=True,
+                apply_mouth_focus=True,
+                temporal_window=3,
+                min_resolution=480,
+                denoise_strength=3  # Gentler denoising (preserves lip detail)
             )
             processed_video_path = preprocessor.process(video_file)
             
@@ -593,8 +603,58 @@ def run_mvp(
         "final_transcript": groq_result["corrected_transcript"],
     }
     
-    # Log everything
+    # Get logger first (needed for session_id)
     logger = get_logger()
+    
+    # Generate timestamped captions
+    try:
+        from Transformer.fusion_caption_generator import FusionCaptionGenerator
+        
+        caption_gen = FusionCaptionGenerator()
+        
+        # Prepare word data with timestamps from DeepGram
+        word_data = [
+            {
+                'word': w[0],
+                'start': w[2] if len(w) > 2 else 0,
+                'end': w[3] if len(w) > 3 else 0
+            }
+            for w in deepgram_result["word_confidences"]
+        ]
+        
+        # Save captions
+        caption_dir = Path("captions")
+        caption_dir.mkdir(exist_ok=True)
+        
+        session_id = logger.session_id if logger else "default"
+        
+        vtt_path = caption_gen.save_captions(
+            final_transcript=groq_result["corrected_transcript"],
+            word_data=word_data,
+            output_path=f"captions/{session_id}.vtt",
+            format_type='vtt'
+        )
+        
+        srt_path = caption_gen.save_captions(
+            final_transcript=groq_result["corrected_transcript"],
+            word_data=word_data,
+            output_path=f"captions/{session_id}.srt",
+            format_type='srt'
+        )
+        
+        print(f"\n📄 Captions saved:")
+        print(f"   WebVTT: {vtt_path}")
+        print(f"   SRT: {srt_path}")
+        
+        result["captions"] = {
+            "vtt": str(vtt_path),
+            "srt": str(srt_path)
+        }
+        
+    except Exception as e:
+        print(f"   ⚠ Caption generation failed: {e}")
+    
+    # Log everything
     logger.log_all(result, video_file=video_file or "mock_data")
     
     return result

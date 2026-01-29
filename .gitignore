@@ -68,3 +68,7 @@ cleanup/
 docs/_build/
 
 samples/
+
+ibug_face_alignment/
+__pycache__/
+ibug_face_detection/

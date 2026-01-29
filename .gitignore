@@ -23,6 +23,31 @@ pip-delete-this-directory.txt
 *.pyc
 .tox/
 .hypothesis/
+ibug_face_alignment/ibug_face_alignment.egg-info/
+ibug_face_detection/ibug_face_detection.egg-info/
+ibug_face_alignment/ibug/
+ibug_face_detection/ibug/
+auto_avsr/__pycache__/
+auto_avsr/datatmodule/__pycache__/
+auto_avsr/doc/__pycache__/
+auto_avsr/espnet/__pycache__/
+auto_avsr/preparation/__pycache__/
+auto_avsr/pretrained_models/__pycache__/
+auto_avsr/spm/__pycache__/
+auto_avsr/tutorials/__pycache__/
+av_hubert/.git/
+av_hubert/avhubert/__pycache__/
+av_hubert/fairseq/__pycache__/
+frontend/node_modules/
+frontend/.vite/
+frontend/dist/
+logs/*.log
+logs/*.json
+logs/*.txt
+my_output/
+uploads/
+samples/audio/
+samples/video/
 
 # === IDE & EDITORS ===
 .vscode/

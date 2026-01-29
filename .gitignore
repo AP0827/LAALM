@@ -1,8 +1,4 @@
-# === CUSTOM ===
-.idea
-cleanup
-
-# === PYTHON ===
+# === PYTHON & BUILD ===
 __pycache__/
 *.py[cod]
 *$py.class
@@ -12,42 +8,19 @@ __pycache__/
 dist/
 build/
 .Python
-env/
-venv/
-ENV/
-.venv/
 pip-log.txt
 pip-delete-this-directory.txt
 .coverage
 .pytest_cache/
-*.pyc
 .tox/
 .hypothesis/
-ibug_face_alignment/ibug_face_alignment.egg-info/
-ibug_face_detection/ibug_face_detection.egg-info/
-ibug_face_alignment/ibug/
-ibug_face_detection/ibug/
-auto_avsr/__pycache__/
-auto_avsr/datatmodule/__pycache__/
-auto_avsr/doc/__pycache__/
-auto_avsr/espnet/__pycache__/
-auto_avsr/preparation/__pycache__/
-auto_avsr/pretrained_models/__pycache__/
-auto_avsr/spm/__pycache__/
-auto_avsr/tutorials/__pycache__/
-av_hubert/.git/
-av_hubert/avhubert/__pycache__/
-av_hubert/fairseq/__pycache__/
-frontend/node_modules/
-frontend/.vite/
-frontend/dist/
-logs/*.log
-logs/*.json
-logs/*.txt
-my_output/
-uploads/
-samples/audio/
-samples/video/
+*.pyc
+
+# === VIRTUAL ENVIRONMENTS ===
+.venv/
+env/
+venv/
+ENV/
 
 # === IDE & EDITORS ===
 .vscode/
@@ -55,6 +28,9 @@ samples/video/
 *.swp
 *.swo
 *~
+.ipynb_checkpoints
+
+# === OS SPECIFIC ===
 .DS_Store
 .DS_Store?
 ._*
@@ -63,37 +39,52 @@ samples/video/
 ehthumbs.db
 Thumbs.db
 
-# === NODE & FRONTEND ===
+# === ENVIRONMENT VARIABLES ===
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# === PROJECT SPECIFIC (Generated/Uploads) ===
+logs/
+uploads/
+my_output/
+captions/
+cleanup/
+temp_video_*.mp4
+samples/
+
+# === MODELS & LARGE BINARIES ===
+**/pretrained_models/
+**/checkpoints/
+*.pth
+*.h5
+*.ckpt
+*.pt
+*.onnx
+*.weights
+*.pb
+
+# === DATASET SAMPLES ===
+samples/audio/
+samples/video/
+!samples/audio/.gitkeep
+!samples/video/.gitkeep
+
+# === FRONTEND / NODE ===
 frontend/node_modules/
 frontend/.vite/
 frontend/dist/
 
-# === APPLICATION DATA ===
-uploads/
-logs/
-my_output/
-cleanup/
+# === EXTERNAL LIBRARIES / LARGE CLONES ===
+ibug_face_alignment/
+ibug_face_detection/
+av_hubert/
 
-# === ENVIRONMENT ===
-.env
-.env.local
-.env.*.local
-
-# === TEMPORARY FILES ===
+# === MISC ===
 *.log
 *.tmp
 *.temp
 *.backup
 *.bak
-
-# === JUPYTER ===
-.ipynb_checkpoints
-
-# === DOCUMENTATION ===
 docs/_build/
-
-samples/
-
-ibug_face_alignment/
-__pycache__/
-ibug_face_detection/

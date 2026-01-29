@@ -35,9 +35,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Create uploads directory
+from fastapi.staticfiles import StaticFiles
+
+# Create uploads and captions directories
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
+CAPTIONS_DIR = Path("captions")
+CAPTIONS_DIR.mkdir(exist_ok=True)
+
+# Mount captions directory
+app.mount("/captions", StaticFiles(directory="captions"), name="captions")
 
 # Response models
 class TranscriptionResult(BaseModel):
@@ -52,6 +59,7 @@ class TranscriptionResult(BaseModel):
     corrections_applied: int
     processing_time: float
     timestamp: str
+    captions: Optional[Dict[str, str]] = None
 
 class HealthResponse(BaseModel):
     status: str
@@ -99,14 +107,20 @@ async def health_check():
 @app.post("/transcribe", response_model=TranscriptionResult)
 async def transcribe(
     video: UploadFile = File(...),
-    audio: Optional[UploadFile] = File(None)
+    audio: Optional[UploadFile] = File(None),
+    use_advanced_preprocessing: bool = True,
+    denoise_strength: int = 3,
+    use_temporal_smoothing: bool = False
 ):
     """
     Transcribe audio/video files using LAALM pipeline
     
     Args:
         video: Video file (required)
-        audio: Audio file (optional, will extract from video if not provided)
+        audio: Audio file (optional)
+        use_advanced_preprocessing: Enable advanced video enhancement (default: True)
+        denoise_strength: Strength of denoising 1-10 (default: 3)
+        use_temporal_smoothing: Enable temporal smoothing (default: False - can blur lips)
     
     Returns:
         TranscriptionResult with all modality outputs
@@ -134,11 +148,35 @@ async def transcribe(
         # Run LAALM pipeline
         result = run_mvp(
             video_file=str(video_path),
-            audio_file=str(audio_path) if audio_path else None
+            audio_file=str(audio_path) if audio_path else None,
+            use_advanced_preprocessing=use_advanced_preprocessing,
+            denoise_strength=denoise_strength,
+            use_temporal_smoothing=use_temporal_smoothing
         )
         
         end_time = datetime.now()
         processing_time = (end_time - start_time).total_seconds()
+        
+        # Verify result structure and sanitize types
+        import numpy as np
+        
+        def sanitize_for_json(obj):
+            if isinstance(obj, np.integer):
+                return int(obj)
+            elif isinstance(obj, np.floating):
+                return float(obj)
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, np.bool_):
+                return bool(obj)
+            elif isinstance(obj, dict):
+                return {k: sanitize_for_json(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [sanitize_for_json(i) for i in obj]
+            return obj
+
+        # Sanitize the entire result dictionary
+        result = sanitize_for_json(result)
         
         # Extract results from pipeline output
         deepgram_result = result['deepgram']
@@ -154,6 +192,14 @@ async def transcribe(
         # Count corrections
         corrections_applied = len(groq_result.get('corrections', []))
         
+        # Process captions URLs
+        captions_urls = {}
+        if 'captions' in result:
+            for fmt, path in result['captions'].items():
+                # Convert absolute path to relative URL
+                filename = Path(path).name
+                captions_urls[fmt] = f"/captions/{filename}"
+        
         # Build response
         response = TranscriptionResult(
             audio_transcript=deepgram_result['transcript'],
@@ -166,7 +212,8 @@ async def transcribe(
             word_details=word_confidences,
             corrections_applied=corrections_applied,
             processing_time=processing_time,
-            timestamp=start_time.isoformat()
+            timestamp=start_time.isoformat(),
+            captions=captions_urls
         )
         
         return response
@@ -187,13 +234,22 @@ async def transcribe(
 @app.post("/transcribe-separate")
 async def transcribe_separate(
     video: UploadFile = File(...),
-    audio: UploadFile = File(...)
+    audio: UploadFile = File(...),
+    use_advanced_preprocessing: bool = True,
+    denoise_strength: int = 3,
+    use_temporal_smoothing: bool = False
 ):
     """
     Transcribe with separate audio and video files
     Alias for /transcribe with required audio parameter
     """
-    return await transcribe(video=video, audio=audio)
+    return await transcribe(
+        video=video, 
+        audio=audio,
+        use_advanced_preprocessing=use_advanced_preprocessing,
+        denoise_strength=denoise_strength,
+        use_temporal_smoothing=use_temporal_smoothing
+    )
 
 
 @app.get("/logs")

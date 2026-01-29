@@ -100,7 +100,7 @@ class LAALMLogger:
                 dg_conf = word_data['deepgram']['confidence']
                 av_conf = word_data['avsr']['confidence']
                 avg_conf = word_data['average_confidence']
-                agreement = "✓" if word_data['agreement'] else "✗"
+                agreement = "✓" if word_data.get('agreed', False) else "✗"
                 low_conf = "⚠" if word_data['low_confidence'] else "✓"
                 
                 self.confidence_logger.info(
@@ -136,7 +136,7 @@ class LAALMLogger:
         # Agreement metrics
         if 'combined_words' in result:
             total_words = len(result['combined_words'])
-            agreements = sum(1 for w in result['combined_words'] if w['agreement'])
+            agreements = sum(1 for w in result['combined_words'] if w.get('agreed', False))
             disagreements = total_words - agreements
             low_conf = sum(1 for w in result['combined_words'] if w['low_confidence'])
             

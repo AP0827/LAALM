@@ -11,6 +11,9 @@ export default {
         secondary: '#6366F1',
         accent: '#8B5CF6',
       },
+      backgroundSize: {
+        '300%': '300%',
+      },
     },
   },
   plugins: [],

@@ -46,12 +46,17 @@ Thumbs.db
 !.env.example
 
 # === PROJECT SPECIFIC (Generated/Uploads) ===
-logs/
-uploads/
+logs/*
+!logs/.gitkeep
+uploads/*
+!uploads/.gitkeep
+captions/*
+!captions/.gitkeep
 my_output/
-captions/
+temp_vis/
 cleanup/
 temp_video_*.mp4
+*.pid
 samples/
 
 # === MODELS & LARGE BINARIES ===
@@ -64,12 +69,6 @@ samples/
 *.onnx
 *.weights
 *.pb
-
-# === DATASET SAMPLES ===
-samples/audio/
-samples/video/
-!samples/audio/.gitkeep
-!samples/video/.gitkeep
 
 # === FRONTEND / NODE ===
 frontend/node_modules/

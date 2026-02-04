@@ -1,282 +1,409 @@
-# LAALM - Lip-reading and Audio Analysis with LLM# LipNet: End-to-End Sentence-level Lipreading
+# LAALM - Lip-reading and Audio Analysis with LLM
 
+Multi-modal speech transcription system combining audio analysis, visual lip-reading, and LLM-based correction for improved accuracy in challenging audio environments.
 
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Multi-modal speech transcription system combining audio analysis, visual lip-reading, and LLM correction.Keras implementation of the method described in the paper 'LipNet: End-to-End Sentence-level Lipreading' by Yannis M. Assael, Brendan Shillingford, Shimon Whiteson, and Nando de Freitas (https://arxiv.org/abs/1611.01599).
+## Table of Contents
 
+- [Overview](#overview)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Command Line](#command-line)
+  - [Web Interface](#web-interface)
+  - [Python API](#python-api)
+- [Project Structure](#project-structure)
+- [Configuration](#configuration)
+- [Common Commands](#common-commands)
+- [Documentation](#documentation)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [Citation](#citation)
+- [License](#license)
 
+## Overview
 
-## Features![LipNet performing prediction (subtitle alignment only for visualization)](assets/lipreading.gif)
+LAALM (Lip-reading and Audio Analysis with LLM) is a state-of-the-art multi-modal speech transcription system that combines:
 
+- **Audio Transcription**: DeepGram API for high-accuracy speech-to-text
+- **Visual Lip-reading**: Auto-AVSR neural network for video-based transcription
+- **LLM Fusion**: Groq/OpenAI for intelligent multi-modal transcript correction
+- **Confidence Scoring**: Word-level confidence for both audio and visual inputs
+- **Automatic Fallback**: Graceful degradation when APIs are unavailable
 
+This approach is particularly effective in noisy environments, with accented speech, or when audio quality is compromised.
 
-- **Audio Transcription**: DeepGram API for high-accuracy speech-to-text## Results
+## Features
 
-- **Visual Lip-reading**: LipNet neural network for video-based transcription
+✨ **Multi-Modal Processing**
+- Parallel audio and visual speech recognition
+- Intelligent fusion using large language models
+- Word-level confidence scoring and alignment
 
-- **LLM Fusion**: Groq/OpenAI for intelligent multi-modal transcript correction|        Scenario        | Epoch |  CER  |  WER  |  BLEU  |
+🎯 **High Accuracy**
+- DeepGram: Industry-leading audio transcription
+- Auto-AVSR: State-of-the-art visual speech recognition (20.3% WER on LRS3)
+- LLM correction: Context-aware error correction
 
-- **Confidence Scoring**: Word-level confidence for both audio and visual inputs| :---------------------: | :---: | :---: | :----: | :----: |
+🌐 **Web Interface**
+- Beautiful, modern UI with glassmorphism design
+- Drag-and-drop file upload
+- Real-time progress tracking
+- Downloadable results in multiple formats
 
-- **Automatic Fallback**: Mock mode when APIs unavailable|   Unseen speakers [C]   |  N/A  |  N/A  |  N/A  |  N/A  |
+🔧 **Developer Friendly**
+- Clean Python API
+- FastAPI backend with OpenAPI documentation
+- Comprehensive logging and metrics
+- Mock mode for testing without API keys
 
-|     Unseen speakers     |  178  | 6.19% | 14.19% | 88.21% |
-
-## Quick Start| Overlapped speakers [C] |  N/A  |  N/A  |  N/A  |  N/A  |
-
-|   Overlapped speakers   |  368  | 1.56% | 3.38% | 96.93% |
+## Quick Start
 
 ```bash
+# 1. Clone the repository
+git clone https://github.com/AP0827/LAALM.git
+cd LAALM
 
-# Setup (see SETUP.md for detailed instructions)**Notes**:
+# 2. Set up Python environment
+python3.11 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-source .venv/bin/activate
+# 3. Install dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
 
-pip install -r requirements.txt- [C] means using curriculum learning.
-
-- N/A means either the training is in progress or haven't been performed.
-
-# Configure API keys- Your contribution in sharing the results of this model is highly appreciated :)
-
+# 4. Configure API keys
 cp .env.example .env
+# Edit .env with your API keys
 
-# Edit .env with your GROQ_API_KEY, DEEPGRAM_API_KEY, etc.## Dependencies
-
-
-
-# Run* Keras 2.0+
-
-python main.py* Tensorflow 1.0+
-
-```* PIP (for package installation)
-
-
-
-## Usage ExamplePlus several other libraries listed on `setup.py`
-
-
-
-```python## Usage
-
-from pipeline import run_mvp
-
-To use the model, first you need to clone the repository:
-
-result = run_mvp(
-
-    video_file="samples/video/bbaf2n.mpg",```
-
-    audio_file="samples/audio/swwp4p.wav",git clone https://github.com/rizkiarm/LipNet
-
-    lipnet_weights="LipNet/evaluation/models/unseen-weights178.h5"```
-
-)
-
-Then you can install the package:
-
-print(f"Final Transcript: {result['final_transcript']}")
-
-print(f"DeepGram: {result['deepgram']['transcript']}")```
-
-print(f"LipNet: {result['lipnet']['transcript']}")cd LipNet/
-
-```pip install -e .
-
+# 5. Run the pipeline
+python main.py
 ```
 
-## Project Structure
-
-**Note:** if you don't want to use CUDA, you need to edit the ``setup.py`` and change ``tensorflow-gpu`` to ``tensorflow``
-
-```
-
-LAALM/You're done!
-
-├── main.py                 # Entry point
-
-├── pipeline.py             # MVP orchestrationHere is some ideas on what you can do next:
-
-├── test.py                 # Testing script
-
-├── load_env.py             # Environment configuration* Modify the package and make some improvements to it.
-
-├── requirements.txt        # Python dependencies* Train the model using predefined training scenarios.
-
-├── .env.example            # API key template* Make your own training scenarios.
-
-├── DeepGram/               # Audio transcription module* Use [pre-trained weights](https://github.com/rizkiarm/LipNet/tree/master/evaluation/models) to do lipreading.
-
-│   ├── transcriber.py* Go crazy and experiment on other dataset! by changing some hyperparameters or modify the model.
-
-│   └── word_confidence.py
-
-├── LipNet/                 # Visual lip-reading module## Dataset
-
-│   ├── evaluation/
-
-│   │   ├── models/         # Pre-trained weightsThis model uses GRID corpus (http://spandh.dcs.shef.ac.uk/gridcorpus/)
-
-│   │   └── predict_with_confidence.py
-
-│   └── lipnet/## Pre-trained weights
-
-│       └── model.py
-
-├── Transformer/            # LLM correction moduleFor those of you who are having difficulties in training the model (or just want to see the end results), you can download and use the weights provided here: https://github.com/rizkiarm/LipNet/tree/master/evaluation/models.
-
-│   └── llm_corrector.py
-
-└── samples/                # Test dataMore detail on saving and loading weights can be found in [Keras FAQ](https://keras.io/getting-started/faq/#how-can-i-save-a-keras-model).
-
-    ├── audio/*.wav         # Audio samples
-
-    └── video/*.mpg         # Video samples## Training
-
-```
-
-There are five different training scenarios that are (going to be) available:
-
-## Models
+## Installation
 
 ### Prerequisites
 
-Pre-trained LipNet models (in `LipNet/evaluation/models/`):
+- **Python 3.11+** (required for TensorFlow 2.12/Keras 2.12 compatibility)
+- **pip** package manager
+- **git** for cloning
+- **CUDA** (optional, for GPU acceleration)
+- **Node.js 20.x+** (for web interface)
 
-- **unseen-weights178.h5** - For unseen speakers (14.19% WER)1. Download all video (normal) and align from the GRID Corpus website.
+### Detailed Installation
 
-- **overlapped-weights368.h5** - For overlapped speakers (3.38% WER)2. Extracts all the videos and aligns.
+See [docs/INSTALLATION.md](docs/INSTALLATION.md) for comprehensive installation instructions including:
+- System-specific setup (Ubuntu, Windows, macOS)
+- GPU/CUDA configuration
+- Troubleshooting common issues
+- Model downloads
 
-3. Create ``datasets`` folder on each training scenario folder.
+### API Keys
 
-## Requirements4. Create ``align`` folder inside the ``datasets`` folder.
+You'll need API keys from:
+- **Groq**: [console.groq.com](https://console.groq.com) (free tier available)
+- **DeepGram**: [deepgram.com](https://deepgram.com) (free tier available)
+- **OpenAI**: [platform.openai.com](https://platform.openai.com) (optional fallback)
 
-5. All current ``train.py`` expect the videos to be in the form of 100x50px mouthcrop image frames.
+Add them to your `.env` file:
+```bash
+GROQ_API_KEY=gsk_your_groq_key_here
+DEEPGRAM_API_KEY=your_deepgram_key_here
+OPENAI_API_KEY=sk_your_openai_key_here  # Optional
+```
 
-- Python 3.11+ (required for TensorFlow 2.12/Keras 2.12 compatibility)   You can change this by adding ``vtype = "face"`` and ``face_predictor_path`` (which can be found in ``evaluation/models``) in the instantiation of ``Generator`` inside the ``train.py``
+## Usage
 
-- CUDA-compatible GPU (optional, for faster inference)6. The other way would be to extract the mouthcrop image using ``scripts/extract_mouth_batch.py`` (usage can be found inside the script).
+### Command Line
 
-- API Keys: DeepGram, Groq (or OpenAI)7. Create symlink from each ``training/*/datasets/align`` to your align folder.
+**Basic usage:**
+```bash
+python main.py
+```
 
-8. You can change the training parameters by modifying ``train.py`` inside its respective scenarios.
+**Custom files:**
+```python
+from pipeline import run_mvp
 
-## API Keys
+result = run_mvp(
+    video_file="samples/video/your_video.mpg",
+    audio_file="samples/audio/your_audio.wav"
+)
 
-### Random split (Unmaintained)
+print(f"Final Transcript: {result['final_transcript']}")
+print(f"Confidence: {result['groq']['confidence']:.2%}")
+```
 
-Set in `.env` file:
+**View results:**
+```bash
+# Latest transcripts
+cat logs/transcripts_*.log | tail -20
 
-```Create symlink from ``training/random_split/datasets/video`` to your video dataset folder (which contains ``s*`` directory).
+# Detailed metrics
+cat logs/metrics_*.log | tail -30
 
+# JSON results
+python -m json.tool logs/results_*.json | less
+```
+
+### Web Interface
+
+**Start the web interface:**
+```bash
+# Option 1: Use startup script (recommended)
+./start_web.sh
+
+# Option 2: Start manually
+# Terminal 1 - Backend
+source .venv/bin/activate
+python api.py
+
+# Terminal 2 - Frontend
+cd frontend
+npm install
+npm run dev
+```
+
+Access at:
+- **Frontend**: http://localhost:5173
+- **API Docs**: http://localhost:8000/docs
+
+See [docs/WEB_INTERFACE.md](docs/WEB_INTERFACE.md) for detailed web interface documentation.
+
+### Python API
+
+```python
+from pipeline import run_mvp
+
+# Process video with audio
+result = run_mvp(
+    video_file="path/to/video.mpg",
+    audio_file="path/to/audio.wav"
+)
+
+# Access results
+print(f"Audio: {result['deepgram']['transcript']}")
+print(f"Video: {result['avsr']['transcript']}")
+print(f"Final: {result['final_transcript']}")
+
+# Word-level details
+for word in result['word_details']:
+    print(f"{word['word']}: audio={word['audio_conf']:.2f}, video={word['video_conf']:.2f}")
+```
+
+See [docs/API.md](docs/API.md) for complete API documentation.
+
+## Project Structure
+
+```
+LAALM/
+├── main.py                 # Entry point for CLI
+├── pipeline.py             # Core multi-modal pipeline
+├── api.py                  # FastAPI backend server
+├── requirements.txt        # Python dependencies
+├── .env.example            # API key template
+│
+├── DeepGram/               # Audio transcription module
+│   ├── transcriber.py
+│   └── word_confidence.py
+│
+├── auto_avsr/              # Visual speech recognition
+│   ├── inference_wrapper.py
+│   ├── pretrained_models/
+│   └── preparation/
+│
+├── Transformer/            # LLM correction module
+│   ├── llm_corrector.py
+│   ├── fusion.py
+│   └── alignment.py
+│
+├── frontend/               # React web interface
+│   ├── src/
+│   ├── package.json
+│   └── vite.config.js
+│
+├── samples/                # Test data
+│   ├── audio/*.wav
+│   └── video/*.mpg
+│
+├── docs/                   # Documentation
+│   ├── INSTALLATION.md
+│   ├── API.md
+│   ├── WEB_INTERFACE.md
+│   ├── ARCHITECTURE.md
+│   └── DEVELOPMENT.md
+│
+├── logs/                   # Runtime logs (auto-generated)
+├── uploads/                # Temporary uploads (auto-generated)
+└── captions/               # Generated captions (auto-generated)
+```
+
+## Configuration
+
+### Environment Variables
+
+Configure in `.env` file:
+
+```bash
+# Required
 GROQ_API_KEY=your_groq_key
+DEEPGRAM_API_KEY=your_deepgram_key
 
-DEEPGRAM_API_KEY=your_deepgram_keyTrain the model using the following command:
-
-OPENAI_API_KEY=your_openai_key  # Optional fallback
-
-``````
-
-./train random_split [GPUs (optional)]
-
-## License```
-
-
-
-See individual module directories for specific licenses.**Note:** You can change the validation split value by modifying the ``val_split`` argument inside the ``train.py``.
-
-
-### Unseen speakers
-
-Create the following folder:
-
-* ``training/unseen_speakers/datasets/train``
-* ``training/unseen_speakers/datasets/val``
-
-Then, create symlink from ``training/unseen_speakers/datasets/[train|val]/s*`` to your selection of ``s*`` inside of the video dataset folder.
-
-The paper used ``s1``, ``s2``, ``s20``, and ``s22`` for evaluation and the remainder for training.
-
-Train the model using the following command:
-
-```
-./train unseen_speakers [GPUs (optional)]
+# Optional
+OPENAI_API_KEY=your_openai_key
+LOG_LEVEL=INFO
+MAX_WORKERS=4
 ```
 
-### Unseen speakers with curriculum learning
+### Model Configuration
 
-The same way you do unseen speakers.
+Edit `pipeline.py` to customize:
+- Face detector: `detector="retinaface"` or `detector="mediapipe"`
+- LLM model: `model="llama-3.3-70b-versatile"` (Groq) or `model="gpt-4"` (OpenAI)
+- Confidence thresholds
 
-**Note:** You can change the curriculum by modifying the ``curriculum_rules`` method inside the ``train.py``
+## Common Commands
 
-```
-./train unseen_speakers_curriculum [GPUs (optional)]
-```
+### Running Demos
+```bash
+# Full interactive demo
+./demo.sh
 
-### Overlapped Speakers
-
-Run the preparation script:
-
-```
-python prepare.py [Path to video dataset] [Path to align dataset] [Number of samples]
-```
-
-**Notes:**
-
-- ``[Path to video dataset]`` should be a folder with structure: ``/s{i}/[video]``
-- ``[Path to align dataset]`` should be a folder with structure: ``/[align].align``
-- ``[Number of samples]`` should be less than or equal to ``min(len(ls '/s{i}/*'))``
-
-Then run training for each speaker:
-
-```
-python training/overlapped_speakers/train.py s{i}
+# Quick run
+python main.py
 ```
 
-### Overlapped Speakers with curriculum learning
+### Generate Figures
+```bash
+# Dataset samples visualization
+python generate_dataset_figure.py
 
-1. Copy the ``prepare.py`` from ``overlapped_speakers`` folder to ``overlapped_speakers_curriculum`` folder,
-   and run it as previously described in overlapped speakers training explanation.
-
-Then run training for each speaker:
-
-```
-python training/overlapped_speakers_curriculum/train.py s{i}
+# System architecture diagram
+python generate_figure2.py
 ```
 
-**Note:** As always, you can change the curriculum by modifying the ``curriculum_rules`` method inside the ``train.py``
+### Calculate Metrics
+```bash
+# Word Error Rate (WER) calculation
+python calculate_metrics.py
 
-## Evaluation
-
-To evaluate and visualize the trained model on a single video / image frames, you can execute the following command:
-
-```
-./predict [path to weight] [path to video]
-```
-
-**Example:**
-
-```
-./predict evaluation/models/overlapped-weights368.h5 evaluation/samples/id2_vcd_swwp2s.mpg
+# View agreement rates
+grep "AGREEMENT METRICS" logs/metrics_*.log -A 5
 ```
 
-## Work in Progress
+### Batch Processing
+```bash
+# Process multiple samples
+python -c "
+from pipeline import run_mvp
+for video in ['lwwz9s.mpg', 'bbaf2n.mpg', 'bgaa6n.mpg']:
+    result = run_mvp(
+        video_file=f'samples/video/{video}',
+        audio_file=f'samples/audio/{video[:-4]}.wav'
+    )
+    print(f'{video}: {result[\"final_transcript\"]}')
+"
+```
 
-This is a work in progress. Errors are to be expected.
-If you found some errors in terms of implementation please report them by submitting issue(s) or making PR(s). Thanks!
+### Cleanup
+```bash
+# Remove old logs
+rm -rf logs/*
 
-**Some todos:**
+# Remove uploaded files
+rm -rf uploads/*
 
-- [X] Use ~~Stanford-CTC~~ Tensorflow CTC beam search
-- [X] Auto spelling correction
-- [X] Overlapped speakers (and its curriculum) training
-- [ ] Integrate language model for beam search
-- [ ] RGB normalization over the dataset.
-- [X] Validate CTC implementation in training.
-- [ ] Proper documentation
-- [ ] Unit tests
-- [X] (Maybe) better curriculum learning.
-- [ ] (Maybe) some proper scripts to do dataset stuff.
+# Remove Python cache
+find . -type d -name "__pycache__" -exec rm -rf {} +
+find . -type f -name "*.pyc" -delete
+```
+
+## Documentation
+
+- **[Installation Guide](docs/INSTALLATION.md)** - Detailed setup instructions
+- **[API Documentation](docs/API.md)** - REST API reference
+- **[Web Interface](docs/WEB_INTERFACE.md)** - Web UI guide
+- **[Architecture](docs/ARCHITECTURE.md)** - System design and components
+- **[Development](docs/DEVELOPMENT.md)** - Contributing and development guide
+
+## Troubleshooting
+
+### Python Version Issues
+**Problem:** TensorFlow 2.12 not available for Python 3.12+
+
+**Solution:** Use Python 3.11
+```bash
+sudo apt install python3.11 python3.11-venv
+python3.11 -m venv .venv
+```
+
+### API Rate Limits
+**Problem:** API calls failing or slow
+
+**Solution:**
+- Check API key validity in provider dashboards
+- Verify rate limits
+- Use mock mode for testing
+
+### Model Not Found
+**Problem:** Pre-trained model files not found
+
+**Solution:**
+```bash
+# Check model files exist
+ls -lh auto_avsr/pretrained_models/*.pth
+
+# Download if missing (see docs/INSTALLATION.md)
+```
+
+### CUDA Issues
+**Problem:** TensorFlow not detecting GPU
+
+**Solution:**
+```bash
+# Check CUDA availability
+python -c "import torch; print(torch.cuda.is_available())"
+
+# Install CUDA toolkit if needed
+sudo apt install nvidia-cuda-toolkit
+```
+
+For more troubleshooting, see [docs/INSTALLATION.md](docs/INSTALLATION.md).
+
+## Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
+- Code style and conventions
+- Pull request process
+- Issue reporting
+- Development setup
+
+## Citation
+
+If you use LAALM in your research, please cite:
+
+```bibtex
+@article{laalm2026,
+  title={LAALM: Lip-reading and Audio Analysis with Large Language Models},
+  author={Yeleti, Asish Kumar and Pandey, Aayush},
+  journal={arXiv preprint},
+  year={2026}
+}
+```
 
 ## License
 
-MIT License
+This project is licensed under the MIT License - see individual module directories for specific licenses.
+
+## Contact
+
+- **Asish Kumar Yeleti**: asishkumary.is23@rvce.edu.in
+- **Aayush Pandey**: aayushpandey.is23@rvce.edu.in
+- **Institution**: R V College of Engineering
+
+---
+
+**Built with ❤️ by the LAALM Team**

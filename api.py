@@ -109,7 +109,9 @@ async def transcribe(
     video: UploadFile = File(...),
     audio: Optional[UploadFile] = File(None),
     use_advanced_preprocessing: bool = True,
-    denoise_strength: int = 3,
+
+    video_denoise_strength: int = 0,
+    audio_denoise_strength: int = 0,
     use_temporal_smoothing: bool = False
 ):
     """
@@ -119,7 +121,8 @@ async def transcribe(
         video: Video file (required)
         audio: Audio file (optional)
         use_advanced_preprocessing: Enable advanced video enhancement (default: True)
-        denoise_strength: Strength of denoising 1-10 (default: 3)
+        video_denoise_strength: Video denoising 0-10
+        audio_denoise_strength: Audio denoising 0-10
         use_temporal_smoothing: Enable temporal smoothing (default: False - can blur lips)
     
     Returns:
@@ -137,22 +140,87 @@ async def transcribe(
             shutil.copyfileobj(video.file, buffer)
         
         # Save audio file if provided
+        cleanup_audio = False
         if audio:
             audio_path = UPLOAD_DIR / f"audio_{start_time.strftime('%Y%m%d_%H%M%S')}_{audio.filename}"
             with open(audio_path, "wb") as buffer:
                 shutil.copyfileobj(audio.file, buffer)
         else:
-            # TODO: Extract audio from video
-            audio_path = None
+            cleanup_audio = True
+            # Extract audio from video using ffmpeg
+            import subprocess
+            
+            # Create a path based on the video filename but with .wav extension
+            audio_filename = f"extracted_{start_time.strftime('%Y%m%d_%H%M%S')}_{Path(video.filename).stem}.wav"
+            audio_path = UPLOAD_DIR / audio_filename
+            
+            print(f"🔊 Extracting audio from {video_path} to {audio_path}...")
+            
+            # Build audio filters
+            audio_filters = []
+            if use_advanced_preprocessing:
+                # 1. Bandpass Filter (Safe Speech Range: 200Hz - 3000Hz)
+                # Removes low rumble (wind/machinery) and high hiss
+                audio_filters.append("highpass=f=200,lowpass=f=3000")
+                
+                # 2. Noise Reduction (if strength > 2)
+                if audio_denoise_strength > 2:
+                    # Map 3-10 to 5-30dB noise reduction
+                    # nr: noise reduction level in dB
+                    nr_level = min(30, (audio_denoise_strength - 1) * 3)
+                    audio_filters.append(f"afftdn=nr={nr_level}")
+                    print(f"   ✨ Applying Audio Denoising (Level {nr_level}dB)")
+
+            try:
+                # ffmpeg -i input_video.mp4 -vn -acodec pcm_s16le -ar 16000 -ac 1 output_audio.wav
+                command = [
+                    "ffmpeg",
+                    "-y", # Overwrite output if exists
+                    "-i", str(video_path),
+                    "-vn", # No video
+                    "-acodec", "pcm_s16le", # PWM 16-bit
+                    "-ar", "16000", # 16kHz
+                    "-ac", "1", # Mono
+                ]
+                
+                # Apply filters if we have any
+                if audio_filters:
+                    command.extend(["-af", ",".join(audio_filters)])
+                
+                command.append(str(audio_path))
+                
+                # Run ffmpeg, suppressing output unless error
+                subprocess.run(
+                    command, 
+                    check=True, 
+                    stdout=subprocess.PIPE, 
+                    stderr=subprocess.PIPE
+                )
+                print("   ✓ Audio extraction successful")
+                
+            except subprocess.CalledProcessError as e:
+                print(f"   ❌ Audio extraction failed: {e}")
+                # Fallback: Let pipeline handle missing audio (will use mock or fail gracefully)
+                if audio_path.exists():
+                    audio_path.unlink()
+                audio_path = None
         
         # Run LAALM pipeline
         result = run_mvp(
             video_file=str(video_path),
             audio_file=str(audio_path) if audio_path else None,
             use_advanced_preprocessing=use_advanced_preprocessing,
-            denoise_strength=denoise_strength,
+            video_denoise_strength=video_denoise_strength,
             use_temporal_smoothing=use_temporal_smoothing
         )
+
+        # Cleanup temporary audio file
+        if cleanup_audio and audio_path and audio_path.exists():
+            print(f"🧹 Cleaning up temporary audio: {audio_path}")
+            try:
+                audio_path.unlink()
+            except Exception as e:
+                print(f"   ⚠ Failed to delete temp audio: {e}")
         
         end_time = datetime.now()
         processing_time = (end_time - start_time).total_seconds()

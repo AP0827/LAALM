@@ -106,7 +106,7 @@ class InferencePipelineWithConfidence(torch.nn.Module):
             
             # Run beam search
             nbest_hyps = self.beam_search(enc_feat)
-            nbest_hyps = [h.asdict() for h in nbest_hyps[:min(len(nbest_hyps), 1)]]
+            nbest_hyps = [h.asdict() for h in nbest_hyps[:min(len(nbest_hyps), 5)]]
             
             # Extract best hypothesis
             best_hyp = nbest_hyps[0]
@@ -126,10 +126,18 @@ class InferencePipelineWithConfidence(torch.nn.Module):
             else:
                 overall_confidence = 0.5
         
+        # Extract N-Best transcripts
+        nbest_transcripts = []
+        for hyp in nbest_hyps:
+            t_ids = torch.tensor(list(map(int, hyp["yseq"][1:])))
+            t_str = self.modelmodule.text_transform.post_process(t_ids).replace("<eos>", "")
+            nbest_transcripts.append(t_str)
+
         return {
             "transcript": transcript,
             "overall_confidence": overall_confidence,
-            "word_confidences": word_confidences
+            "word_confidences": word_confidences,
+            "nbest_transcripts": nbest_transcripts
         }
     
     def _extract_word_confidences(
@@ -167,14 +175,17 @@ class InferencePipelineWithConfidence(torch.nn.Module):
         seq_length = len(token_ids)
         avg_token_score = total_score / max(seq_length, 1)
         
-        # Convert to probability-like confidence
-        # Use sigmoid to map to [0, 1] range
-        # Typical scores range from -20 to 0, so we scale accordingly
-        base_confidence = 1.0 / (1.0 + torch.exp(torch.tensor(-avg_token_score * 0.5)))
-        base_confidence = base_confidence.item()
+        # Convert log probability to confidence (probability 0-1)
+        # Score is log-likelihood. exp(score) is likelihood.
+        # We clamp it slightly to avoid 0.0 or 1.0 for numerical stability.
         
-        # Ensure reasonable range (0.5 to 0.95)
-        base_confidence = max(0.5, min(0.95, base_confidence))
+        # Calculate geometric mean probability per token
+        probability = torch.exp(torch.tensor(avg_token_score)).item()
+        
+        base_confidence = probability
+        
+        # Ensure reasonable range (0.01 to 0.99)
+        base_confidence = max(0.01, min(0.99, base_confidence))
         
         # For simplicity, assign same confidence to all words
         # In a more sophisticated version, we could track token-level scores

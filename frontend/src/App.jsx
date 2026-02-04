@@ -17,7 +17,8 @@ const App = () => {
 
   const [settings, setSettings] = useState({
     use_advanced_preprocessing: true,
-    denoise_strength: 3,
+    video_denoise_strength: 3,
+    audio_denoise_strength: 3,
     use_temporal_smoothing: false
   });
 
@@ -43,7 +44,8 @@ const App = () => {
 
     // Append settings
     formData.append('use_advanced_preprocessing', settings.use_advanced_preprocessing);
-    formData.append('denoise_strength', settings.denoise_strength);
+    formData.append('video_denoise_strength', settings.video_denoise_strength);
+    formData.append('audio_denoise_strength', settings.audio_denoise_strength);
     formData.append('use_temporal_smoothing', settings.use_temporal_smoothing);
 
     try {
@@ -148,10 +150,10 @@ const App = () => {
                 </div>
               </div>
               <h2 className="text-2xl font-bold text-white mb-2">
-                {status === 'uploading' ? 'Uploading Media...' : 'Analyzing Lip Movements...'}
+                {status === 'uploading' ? 'Uploading Media...' : 'Optimizing & Analyzing...'}
               </h2>
               <p className="text-gray-400">
-                {status === 'processing' && "Running VSR, aligning modalities, and applying LLM corrections."}
+                {status === 'processing' && "Standardizing video, running VSR, and applying LLM corrections."}
               </p>
             </motion.div>
           )}

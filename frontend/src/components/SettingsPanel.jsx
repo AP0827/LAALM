@@ -75,7 +75,7 @@ const SettingsPanel = ({ settings, setSettings }) => {
                                 onClick={toggleSmoothing}
                                 disabled={!settings.use_advanced_preprocessing}
                                 className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ${!settings.use_advanced_preprocessing ? 'opacity-50 cursor-not-allowed bg-gray-800' :
-                                        settings.use_temporal_smoothing ? 'bg-blue-600' : 'bg-gray-700'
+                                    settings.use_temporal_smoothing ? 'bg-blue-600' : 'bg-gray-700'
                                     }`}
                             >
                                 <motion.div
@@ -87,39 +87,64 @@ const SettingsPanel = ({ settings, setSettings }) => {
                         </div>
                     </div>
 
-                    {/* Denoise Slider */}
+                    {/* Video Denoise Slider */}
                     <div className={`space-y-4 transition-opacity duration-300 ${!settings.use_advanced_preprocessing ? 'opacity-50 pointer-events-none' : ''}`}>
                         <div className="flex justify-between items-center">
                             <span className="font-medium text-gray-300 flex items-center gap-2">
-                                <FiActivity /> Denoise Strength
+                                <FiActivity className="text-blue-400" /> Video Denoise
                             </span>
-                            <span className="bg-purple-500/20 text-purple-300 px-2 py-1 rounded text-xs font-mono">
-                                {settings.denoise_strength} / 10
+                            <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded text-xs font-mono">
+                                {settings.video_denoise_strength} / 10
                             </span>
                         </div>
 
                         <input
                             type="range"
-                            min="1"
+                            min="0"
                             max="10"
-                            value={settings.denoise_strength}
-                            onChange={updateDenoise}
-                            className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                            value={settings.video_denoise_strength}
+                            onChange={(e) => setSettings(prev => ({ ...prev, video_denoise_strength: parseInt(e.target.value) }))}
+                            className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 font-mono">
+                            <span>Off</span>
+                            <span>Strong</span>
+                        </div>
+                    </div>
+
+                    {/* Audio Denoise Slider */}
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                            <span className="font-medium text-gray-300 flex items-center gap-2">
+                                <FiActivity className="text-green-400" /> Audio Denoise
+                            </span>
+                            <span className="bg-green-500/20 text-green-300 px-2 py-1 rounded text-xs font-mono">
+                                {settings.audio_denoise_strength} / 10
+                            </span>
+                        </div>
+
+                        <input
+                            type="range"
+                            min="0"
+                            max="10"
+                            value={settings.audio_denoise_strength}
+                            onChange={(e) => setSettings(prev => ({ ...prev, audio_denoise_strength: parseInt(e.target.value) }))}
+                            className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-green-500"
                         />
 
                         <div className="flex justify-between text-xs text-gray-500 font-mono">
-                            <span>Gentle (Details)</span>
-                            <span>Aggressive (Smooth)</span>
+                            <span>Raw</span>
+                            <span> aggressive (&gt;5)</span>
                         </div>
 
-                        {settings.denoise_strength > 5 && (
+                        {settings.audio_denoise_strength > 2 && (
                             <motion.div
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
-                                className="flex items-start gap-2 text-xs text-yellow-500 bg-yellow-500/10 p-2 rounded"
+                                className="flex items-start gap-2 text-xs text-green-500 bg-green-500/10 p-2 rounded"
                             >
                                 <FiInfo className="mt-0.5 flex-shrink-0" />
-                                <span>High values may remove lip texture needed for VSR. Recommended: 3-5.</span>
+                                <span>Active: Bandpass Filter + FFT Noise Reduction (Level {settings.audio_denoise_strength}).</span>
                             </motion.div>
                         )}
                     </div>

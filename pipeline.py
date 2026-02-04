@@ -26,6 +26,8 @@ from logger import get_logger
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'auto_avsr'))
 sys.path.insert(0, os.path.dirname(__file__))
 
+from video_utils import SafeVideoPreprocessor
+
 
 def get_deepgram_confidence(audio_file: str, api_key: Optional[str] = None) -> Dict[str, Any]:
     """
@@ -293,6 +295,7 @@ def process_with_groq(
     avsr_words: List[Tuple[str, float]],
     combined_words: List[Dict[str, Any]],
     api_key: Optional[str] = None,
+    nbest_transcripts: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """
     Use Groq to semantically correct and refine the combined output.
@@ -306,12 +309,15 @@ def process_with_groq(
         avsr_words: Word-level confidences from auto_avsr
         combined_words: Combined word-level analysis
         api_key: Groq API key (uses GROQ_API_KEY env var if not provided)
+        nbest_transcripts: List of alternative VSR transcripts (Optional)
         
     Returns:
         Dict with corrected transcript and metadata
     """
     if api_key is None:
         api_key = os.getenv("GROQ_API_KEY")
+    
+    nbest_transcripts = nbest_transcripts or []
     
     if not api_key:
         print("   ⚠ GROQ_API_KEY not set - using fallback mode")
@@ -336,68 +342,55 @@ def process_with_groq(
         low_conf_words = [w for w in combined_words if w["low_confidence"]]
         disagreements = [w for w in combined_words if not w["agreed"]]
         
-        prompt = f"""You are an expert speech transcription refinement system with deep understanding of linguistics, phonetics, and semantic coherence.
+        # Format N-Best list
+        nbest_text = "\n".join([f"   {i+1}. {txt}" for i, txt in enumerate(nbest_transcripts[:5])])
 
-CONTEXT: The user is likely providing speech from the **Grid Corpus** or similar command-based datasets.
-Structure often follows: `Command (Bin/Lay/Place)` + `Color (Blue/Green/Red/White)` + `Preposition (at/by/in/with)` + `Letter (A-Z)` + `Digit (0-9)` + `Adverb (again/now/please/soon)`.
-Example: "Bin blue at K 5 please."
-Note: "Zed" is British 'Z'. VSR often mistakes it.
+        prompt = f"""You are an advanced Audio-Visual Speech Recognition (AVSR) Fusion Engine.
+Your task is to combine a noisy Audio Transcript (ASR) and a noisy Visual Transcript (Lip Reading/VSR) into a single, perfect Sentence.
 
-I have two transcriptions from different modalities (audio ASR and visual lip-reading) of the same speech:
+CONTEXT: General conversational speech.
+Goal: Produce the most accurate, semantically coherent English sentence possible.
 
-AUDIO TRANSCRIPTION (DeepGram - reliable in clean conditions):
-- Transcript: "{deepgram_transcript}"
-- Overall Confidence: {deepgram_confidence:.3f}
-- Word Confidences: {deepgram_words}
+INPUT DATA:
 
-VISUAL TRANSCRIPTION (auto_avsr - lip reading, prone to homophones):
-- Transcript: "{avsr_transcript}"
-- Overall Confidence: {avsr_confidence:.3f}
-- Word Confidences: {avsr_words}
+1. AUDIO TRANSCRIPTION (DeepGram - Usually Reliable for sound, bad for homophones):
+   "{deepgram_transcript}"
+   (Confidence: {deepgram_confidence:.3f})
 
-COMBINED ANALYSIS:
-- Total Words: {len(combined_words)}
-- Low Confidence Words (< 0.7): {len(low_conf_words)}
-   {[w['word'] for w in low_conf_words]}
-- Word Disagreements: {len(disagreements)}
-  {disagreements}
+2. VISUAL TRANSCRIPTION (VSR - Top-1 Hypothesis):
+   "{avsr_transcript}"
+   (Confidence: {avsr_confidence:.3f})
 
-CRITICAL INSTRUCTIONS:
-1. **TRUST THE FUSION LAYER** - But use the Domain Knowledge (Grid Corpus) to resolve ambiguities.
-2. **Handle British "Zed"**: "Zed" matches "Z".
-3. **Handle Homophones**: VSR might see "Denied" for "Zed Nine" (similar visemes). Audio is usually correct for "Zed".
+3. VISUAL ALTERNATIVES (N-Best Beam Search - Hidden possibilities):
+{nbest_text}
 
-YOUR ROLE IS SEMANTIC REFINEMENT + CAPTION FORMATTING - Focus on:
-   - **Punctuation**: Add periods matching the command style.
-   - **Capitalization**: Proper sentence starts.
-   - **Contextual plausibility**: Ensure the transcript makes sense
-   
-3. **DO NOT second-guess modality selection** - The fusion already chose the best word for each position
+4. FUSION ANALYSIS (Word-level Agreement):
+   Disagreements: {len(disagreements)}
+   Low Confidence Words: {[w['word'] for w in low_conf_words]}
 
-4. **Caption Formatting Guidelines**:
-   - Add periods at end of complete thoughts
-   - Add commas for natural pauses
-   - Capitalize first word of each sentence
-   - Capitalize proper nouns (names, places)
-   - Use question marks for questions
-   - Keep numbers and letters as-is (zed, nine, etc.)
+INSTRUCTIONS:
+1. **Prioritize Agreement**: If Audio and Video agree, trust them.
+2. **Use N-Best List**: If the Top-1 Video is wrong (e.g. "Labor"), check the N-Best list. If "Late" is in the list and matches the Audio's sound, IT IS THE CORRECT WORD.
+3. **Resolve Homophones**:
+   - Audio: "Meat" vs "Meet" (Context dependent)
+   - Visual: "Bat" vs "Pat" (Indistinguishable lips)
+   - Use cross-referencing to solve these.
+4. **Generalize**: Do NOT force any specific command structure (like Grid Corpus). The input could be anything (News, Commands, Casual Chat).
+5. **Output Format**: plain text sentence with standard capitalization and punctuation.
 
-5. **LRS3 Grid Commands Context:**
-   These command patterns are VALID and common in the dataset:
-   - "[action] [color] [with/at] [letter] [number] [timing]"
-   - Examples: "Lay white with zed nine soon.", "Bin blue at f two please."
-   - Colors: red, blue, white, green, etc.
-   - Letters: a-z (spelled out or single)
-   - Numbers: 1-10
-   - Actions: lay, bin, set, place, put
-   - Timing: now, soon, please, again
+Example 1 (Fusion):
+Audio: "I went to the..." (cut off)
+Video Top-1: "...store."
+Video Alt: "...shore."
+Context: "Buying milk."
+Result: "I went to the store."
 
-DECISION PROCESS:
-Step 1: Add proper punctuation and capitalization to the combined transcript
-Step 2: Check if the result is semantically coherent
-Step 3: If it makes sense (including LRS3 command patterns), accept it
-Step 4: Only make word-level corrections for clear semantic issues, NOT modality preference
-Step 5: Preserve the word choices from the fusion layer unless they create nonsensical phrases
+Example 2 (Correction):
+Audio: "Lay white with zed..."
+Video: "Lay white with red..."
+Correction: "Lay white with red..." (Visual 'red' fits colors context better than 'zed' if color was expected, but trust audio for distinct sounds).
+
+Your decision must be purely based on likelihood and semantic flow.
 
 Respond with ONLY a JSON object (no markdown, no code blocks):
 {{
@@ -430,28 +423,43 @@ Respond with ONLY a JSON object (no markdown, no code blocks):
         
         result_text = response.choices[0].message.content
         
-        # Parse JSON response with resilience to conversational text
+        # Parse JSON response with resilience
         import json
         import re
+        import ast
         
-        # Try to find a JSON block in the text
+        # Try to find a JSON block
         json_match = re.search(r'\{.*\}', result_text, re.DOTALL)
+        result_json = None
+        
         if json_match:
+            candidate = json_match.group()
             try:
-                result_json = json.loads(json_match.group())
-            except json.JSONDecodeError as e:
-                print(f"   ⚠ JSON Decode Error: {e}")
-                print(f"   RAW RESPONSE: {result_text}")
-                # Try simple repair: sometimes code blocks have backticks
-                clean_text = result_text.replace("```json", "").replace("```", "").strip()
-                try:
-                     result_json = json.loads(clean_text)
-                except:
-                     result_json = json.loads(result_text) # Fallback to original
+                result_json = json.loads(candidate)
             except json.JSONDecodeError:
-                result_json = json.loads(result_text) # Fallback to original
-        else:
-            result_json = json.loads(result_text)
+                # Fallback 1: Try cleanup
+                try:
+                    clean = candidate.replace("```json", "").replace("```", "").strip()
+                    result_json = json.loads(clean)
+                except:
+                    # Fallback 2: ast.literal_eval (handles trailing commas)
+                    try:
+                        result_json = ast.literal_eval(candidate)
+                    except:
+                        pass
+        
+        if not result_json:
+             # Try parsing the whole text if regex failed or didn't contain valid JSON
+             try:
+                 result_json = json.loads(result_text)
+             except:
+                 try:
+                     result_json = ast.literal_eval(result_text)
+                 except:
+                     pass
+
+        if not result_json:
+             raise ValueError(f"Failed to parse Groq response JSON. Raw: {result_text[:50]}...")
         
         return {
             "corrected_transcript": result_json.get("corrected_transcript", ""),
@@ -484,7 +492,7 @@ def run_mvp(
     avsr_model_path: Optional[str] = None,
     # Advanced Preprocessing Configuration
     use_advanced_preprocessing: bool = True,
-    denoise_strength: int = 3,
+    video_denoise_strength: int = 0,
     use_temporal_smoothing: bool = False,
 ) -> Dict[str, Any]:
     """
@@ -497,7 +505,7 @@ def run_mvp(
         groq_api_key: Groq API key
         avsr_model_path: Path to auto_avsr model weights
         use_advanced_preprocessing: Whether to use the advanced preprocessor
-        denoise_strength: Strength of denoising (1-10)
+        video_denoise_strength: Strength of video denoising (0-10)
         use_temporal_smoothing: Whether to use temporal smoothing
         
     Returns:
@@ -530,29 +538,28 @@ def run_mvp(
     processed_video_path = None
     if video_file and os.path.exists(video_file):
         try:
-            if use_advanced_preprocessing:
-                # Preprocess video (Advanced: Denoising, Temporal Smoothing, Mouth-Focus, SR)
-                print("🎥 Preprocessing video (advanced enhancements)...")
-                sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'auto_avsr'))
-                from advanced_preprocessor import AdvancedVideoPreprocessor
-                
-                print(f"   Settings: Denoise={denoise_strength}, Smoothing={use_temporal_smoothing}")
-                preprocessor = AdvancedVideoPreprocessor(
-                    apply_denoising=True,
-                    apply_temporal_smoothing=use_temporal_smoothing,
-                    apply_super_resolution=True,
-                    apply_mouth_focus=True,
-                    temporal_window=3,
-                    min_resolution=480,
-                    denoise_strength=denoise_strength
-                )
-                processed_video_path = preprocessor.process(video_file)
-                
-                # Use processed file for transcription
-                avsr_result = get_avsr_confidence(processed_video_path, avsr_model_path)
+            # Safe Preprocessing (FPS=25, 720p) is now MANDATORY for VSR stability.
+            # "Advanced Preprocessing" toggle now controls optional enhancement (Sharpen/Denoise).
+            
+            print("🎥 Running Safe Video Preprocessing (Standardizing FPS/Res)...")
+            processor = SafeVideoPreprocessor(output_dir=Path("uploads"))
+            
+            processed_video_path, success = processor.process(
+                video_file, 
+                Path(video_file).stem,
+                apply_enhancement=use_advanced_preprocessing,
+                denoise_strength=video_denoise_strength,
+                temporal_smoothing=use_temporal_smoothing
+            )
+            
+            if success:
+                print(f"   ✓ Video optimized: {processed_video_path}")
+                video_input = processed_video_path
             else:
-                print("🎥 Using standard video (no active enhancement)...")
-                avsr_result = get_avsr_confidence(video_file, avsr_model_path)
+                print("   ⚠ Preprocessing failed, falling back to original.")
+                video_input = video_file
+
+            avsr_result = get_avsr_confidence(video_input, avsr_model_path)
                 
         except Exception as e:
             print(f"   ⚠ Video preprocessing failed, using original file: {e}")
@@ -604,6 +611,7 @@ def run_mvp(
         avsr_words=avsr_result["word_confidences"],
         combined_words=combined_words,
         api_key=groq_api_key,
+        nbest_transcripts=avsr_result.get("nbest_transcripts", []),
     )
     
     # Print results

@@ -1,0 +1,30 @@
+{
+  "Simple Average": {
+    "wer": 4.482376283846873,
+    "avg_switches": 0.0,
+    "avg_audio_weight": 0.5,
+    "avg_visual_weight": 0.5,
+    "num_samples": 6
+  },
+  "Confidence-Weighted": {
+    "wer": 4.482376283846873,
+    "avg_switches": 0.0,
+    "avg_audio_weight": 0.5536282033274226,
+    "avg_visual_weight": 0.4463717966725775,
+    "num_samples": 6
+  },
+  "Attention (No Phonetic)": {
+    "wer": 4.482376283846873,
+    "avg_switches": 0.8333333333333334,
+    "avg_audio_weight": 0.5395018850314571,
+    "avg_visual_weight": 0.4604981149685428,
+    "num_samples": 6
+  },
+  "Attention (Full - Ours)": {
+    "wer": 4.482376283846873,
+    "avg_switches": 0.8333333333333334,
+    "avg_audio_weight": 0.5395018850314571,
+    "avg_visual_weight": 0.4604981149685428,
+    "num_samples": 6
+  }
+}

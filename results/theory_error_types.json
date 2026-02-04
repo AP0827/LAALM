@@ -1,0 +1,8 @@
+{
+  "audio_error_types": {},
+  "visual_error_types": {
+    "substitution": 13,
+    "deletion": 2,
+    "insertion": 1
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "contingency_table": [
+    [
+      92.0,
+      16.0
+    ],
+    [
+      0.0,
+      0.0
+    ]
+  ],
+  "chi_square": {
+    "statistic": 0.0,
+    "p_value": 1.0,
+    "dof": 0,
+    "result": "inconclusive"
+  },
+  "mutual_information": {
+    "value": 0.0,
+    "interpretation": "independent"
+  },
+  "correlation": {
+    "value": 0.0,
+    "interpretation": "weak"
+  }
+}

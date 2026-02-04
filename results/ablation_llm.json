@@ -1,0 +1,20 @@
+{
+  "Groq (Llama 3.3 70B)": {
+    "wer": 1.0416666666666667,
+    "avg_latency_ms": 19660.50652662913,
+    "cost_per_1k": 2.5,
+    "model": "llama-3.3-70b"
+  },
+  "No LLM (Baseline)": {
+    "wer": 4.482376283846873,
+    "avg_latency_ms": 13762.35456864039,
+    "cost_per_1k": 0.0,
+    "model": "none"
+  },
+  "Ollama Local (Llama 3 8B)": {
+    "wer": 1.0416666666666667,
+    "avg_latency_ms": 26877.51527229945,
+    "cost_per_1k": 0.0,
+    "model": "llama3-8b"
+  }
+}

@@ -317,10 +317,16 @@ class AttentionFusion:
         agreement_count = 0
         switches = 0
         
+        
+        def _extract(w):
+            if isinstance(w, (list, tuple)) and len(w) >= 2:
+                return w[0], w[1]
+            return "", 0.0
+
         for i in range(max_len):
             # Get words and confidences
-            audio_word, audio_conf = audio_words[i] if i < len(audio_words) else ("", 0.0)
-            visual_word, visual_conf = visual_words[i] if i < len(visual_words) else ("", 0.0)
+            audio_word, audio_conf = _extract(audio_words[i]) if i < len(audio_words) else ("", 0.0)
+            visual_word, visual_conf = _extract(visual_words[i]) if i < len(visual_words) else ("", 0.0)
             
             # Skip if both empty
             if not audio_word and not visual_word:

@@ -127,6 +127,7 @@ def get_avsr_confidence(video_file: str, model_path: Optional[str] = None) -> Di
             "transcript": result['transcript'],
             "overall_confidence": result['overall_confidence'],
             "word_confidences": result['word_confidences'],
+            "nbest_transcripts": result.get('nbest_transcripts', [])
         }
     
     except Exception as e:
@@ -710,4 +711,3 @@ if __name__ == "__main__":
     
     print("\n✅ MVP pipeline completed successfully!")
     print(f"\n📄 Final Transcript: {results['final_transcript']}")
-
